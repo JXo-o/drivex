@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: service-map
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 172.31.19.154:8848
+      config:
+        server-addr: 172.31.19.154:8848
+        file-extension: yaml
+        group: DEV_GROUP
+        namespace: drivex
+        shared-configs:
+          - data-id: common-account.yaml
+            group: DEV_GROUP
+            refresh: true
