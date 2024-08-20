@@ -8,9 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(value = "service-system")
+@FeignClient(value = "service-system", contextId = "sysMenu")
 public interface SysMenuFeignClient {
-
 
     /**
      * 获取菜单
@@ -25,13 +24,13 @@ public interface SysMenuFeignClient {
     Result<Boolean> update(@RequestBody SysMenu permission);
 
     @DeleteMapping("/sysMenu/remove/{id}")
-    Result<Boolean> remove(@PathVariable Long id);
+    Result<Boolean> remove(@PathVariable("id") Long id);
 
     /**
      * 根据角色获取菜单
      */
     @GetMapping("/sysMenu/toAssign/{roleId}")
-    Result<List<SysMenu>> toAssign(@PathVariable Long roleId);
+    Result<List<SysMenu>> toAssign(@PathVariable("roleId") Long roleId);
 
     /**
      * 给角色分配权限

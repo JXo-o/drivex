@@ -1,21 +1,19 @@
 package com.jxh.drivex.common.config.redisson;
 
-import lombok.Data;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.redisson.config.SingleServerConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
-@Configuration
+//@Configuration
 @EnableConfigurationProperties(RedissonProperties.class)
 @ConditionalOnProperty(prefix = "spring.data.redis", name = "host")
-public class RedissonConfiguration {
+public class RedissonConfig {
 
     @Bean
     RedissonClient redissonSingle(RedissonProperties redissonProperties) {

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(value = "service-system")
+@FeignClient(value = "service-system", contextId = "securityLogin")
 public interface SecurityLoginFeignClient {
 
     /**

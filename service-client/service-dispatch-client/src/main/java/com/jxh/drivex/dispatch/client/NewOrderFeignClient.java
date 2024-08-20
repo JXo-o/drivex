@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@FeignClient(value = "service-dispatch")
+@FeignClient(value = "service-dispatch", contextId = "newOrder")
 public interface NewOrderFeignClient {
 
     /**

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.math.BigDecimal;
 import java.util.List;
 
-@FeignClient(value = "service-coupon")
+@FeignClient(value = "service-coupon", contextId = "coupon")
 public interface CouponFeignClient {
 
     /**

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.math.BigDecimal;
 
-@FeignClient(value = "service-order")
+@FeignClient(value = "service-order", contextId = "orderInfo")
 public interface OrderInfoFeignClient {
 
     /**
@@ -143,5 +143,5 @@ public interface OrderInfoFeignClient {
      * 更新优惠券金额
      */
     @GetMapping("/order/info/updateCouponAmount/{orderId}/{couponAmount}")
-    Result<Boolean> updateCouponAmount(@PathVariable Long orderId, @PathVariable BigDecimal couponAmount);
+    Result<Boolean> updateCouponAmount(@PathVariable("orderId") Long orderId, @PathVariable("couponAmount") BigDecimal couponAmount);
 }

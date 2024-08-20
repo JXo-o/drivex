@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  *
  * @author qy
  */
-@FeignClient(value = "service-system")
+@FeignClient(value = "service-system", contextId = "sysLoginLog")
 public interface SysLoginLogFeignClient {
 
     @PostMapping("/sysLoginLog/findPage/{page}/{limit}")
@@ -27,7 +27,7 @@ public interface SysLoginLogFeignClient {
             @RequestBody SysLoginLogQuery sysLoginLogQuery);
 
     @GetMapping("/sysLoginLog/getById/{id}")
-    Result<SysLoginLog> getById(@PathVariable Long id);
+    Result<SysLoginLog> getById(@PathVariable("id") Long id);
 
     /**
      * 记录登录日志

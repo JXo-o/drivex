@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(value = "service-system")
+@FeignClient(value = "service-system", contextId = "sysOperLog")
 public interface SysOperLogFeignClient {
 
     @PostMapping("/sysOperLog/findPage/{page}/{limit}")
@@ -20,7 +20,7 @@ public interface SysOperLogFeignClient {
             @RequestBody SysOperLogQuery sysOperLogQuery);
 
     @GetMapping("/sysOperLog/getById/{id}")
-    Result<SysOperLog> getById(@PathVariable Long id);
+    Result<SysOperLog> getById(@PathVariable("id") Long id);
 
     /**
      * 记录日志

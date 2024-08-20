@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(value = "service-driver")
+@FeignClient(value = "service-driver", contextId = "driverInfo")
 public interface DriverInfoFeignClient {
 
     /**

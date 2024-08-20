@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 
-@FeignClient(value = "service-order")
+@FeignClient(value = "service-order", contextId = "orderMonitor")
 public interface OrderMonitorFeignClient {
 
     /**

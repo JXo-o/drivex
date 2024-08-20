@@ -2,6 +2,8 @@ package com.jxh.drivex.common.result;
 
 import lombok.Data;
 
+import java.util.Objects;
+
 /**
  * 全局统一返回结果类
  *
@@ -62,5 +64,9 @@ public class Result<T> {
     public Result<T> code(Integer code){
         this.setCode(code);
         return this;
+    }
+
+    public boolean isOk() {
+        return Objects.equals(this.code, ResultCodeEnum.SUCCESS.getCode());
     }
 }

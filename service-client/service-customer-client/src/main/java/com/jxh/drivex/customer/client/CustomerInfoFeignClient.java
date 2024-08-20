@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(value = "service-customer")
+@FeignClient(value = "service-customer", contextId = "customerInfo")
 public interface CustomerInfoFeignClient {
 
     @GetMapping("/customer/info/login/{code}")
-    public Result<Long> login(@PathVariable String code);
+    Result<Long> login(@PathVariable("code") String code);
 
     @GetMapping("/customer/info/getCustomerLoginInfo/{customerId}")
     Result<CustomerLoginVo> getCustomerLoginInfo(@PathVariable("customerId") Long customerId);

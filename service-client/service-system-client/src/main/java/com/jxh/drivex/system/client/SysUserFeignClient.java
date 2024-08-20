@@ -7,7 +7,7 @@ import com.jxh.drivex.model.vo.base.PageVo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(value = "service-system")
+@FeignClient(value = "service-system", contextId = "sysUser")
 public interface SysUserFeignClient {
 
     /**

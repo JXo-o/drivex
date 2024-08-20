@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-@FeignClient(value = "service-map")
+@FeignClient(value = "service-map", contextId = "location")
 public interface LocationFeignClient {
 
     /**
@@ -57,12 +57,12 @@ public interface LocationFeignClient {
      * 代驾服务：获取订单服务最后一个位置信息
      */
     @GetMapping("/map/location/getOrderServiceLastLocation/{orderId}")
-    Result<OrderServiceLastLocationVo> getOrderServiceLastLocation(@PathVariable Long orderId);
+    Result<OrderServiceLastLocationVo> getOrderServiceLastLocation(@PathVariable("orderId") Long orderId);
 
     /**
      * 代驾服务：计算订单实际里程
      */
     @GetMapping("/map/location/calculateOrderRealDistance/{orderId}")
-    Result<BigDecimal> calculateOrderRealDistance(@PathVariable Long orderId);
+    Result<BigDecimal> calculateOrderRealDistance(@PathVariable("orderId") Long orderId);
 
 }

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(value = "service-system")
+@FeignClient(value = "service-system", contextId = "sysPost")
 public interface SysPostFeignClient {
 
     @PostMapping("/sysPost/findPage/{page}/{limit}")
@@ -19,7 +19,7 @@ public interface SysPostFeignClient {
             @RequestBody SysPostQuery sysPostQuery);
 
     @GetMapping("/sysPost/getById/{id}")
-    Result<SysPost> getById(@PathVariable Long id);
+    Result<SysPost> getById(@PathVariable("id") Long id);
 
     @GetMapping("/sysPost/findAll")
     Result<List<SysPost>> findAll();
