@@ -21,7 +21,7 @@ public class CustomerInfoController {
 
     @Operation(summary = "小程序授权登录")
     @GetMapping("/login/{code}")
-    public Result<Long> login(@PathVariable String code) {
+    public Result<Long> login(@PathVariable("code") String code) {
         log.info("login code:{}", code);
         return Result.ok(customerInfoService.login(code));
     }
@@ -37,7 +37,7 @@ public class CustomerInfoController {
     @PostMapping("/updateWxPhoneNumber")
     Result<Boolean> updateWxPhoneNumber(@RequestBody UpdateWxPhoneForm updateWxPhoneForm) {
         log.info("updateWxPhoneNumber updateWxPhoneForm:{}", updateWxPhoneForm);
-        return Result.ok(true);
+        return Result.ok(customerInfoService.updateWxPhoneNumber(updateWxPhoneForm));
     }
 
     @Operation(summary = "获取客户OpenId")

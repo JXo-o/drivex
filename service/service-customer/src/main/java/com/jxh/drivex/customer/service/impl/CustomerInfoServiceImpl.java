@@ -2,6 +2,8 @@ package com.jxh.drivex.customer.service.impl;
 
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
+import cn.binarywang.wx.miniapp.bean.WxMaPhoneNumberInfo;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
@@ -10,7 +12,9 @@ import com.jxh.drivex.customer.mapper.CustomerLoginLogMapper;
 import com.jxh.drivex.customer.service.CustomerInfoService;
 import com.jxh.drivex.model.entity.customer.CustomerInfo;
 import com.jxh.drivex.model.entity.customer.CustomerLoginLog;
+import com.jxh.drivex.model.form.customer.UpdateWxPhoneForm;
 import com.jxh.drivex.model.vo.customer.CustomerLoginVo;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.error.WxErrorException;
 import org.apache.logging.log4j.util.Strings;
@@ -18,7 +22,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -76,5 +79,18 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         BeanUtils.copyProperties(customerInfo, customerInfoVo);
         customerInfoVo.setIsBindPhone(Strings.isEmpty(customerInfo.getPhone()));
         return customerInfoVo;
+    }
+
+    @Override
+    @SneakyThrows
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateWxPhoneNumber(UpdateWxPhoneForm updateWxPhoneForm) {
+        WxMaPhoneNumberInfo phoneInfo = wxMaService.getUserService().getPhoneNoInfo(updateWxPhoneForm.getCode());
+        String phoneNumber = phoneInfo.getPhoneNumber();
+        log.info("phoneInfo:{}", JSON.toJSONString(phoneInfo));
+        CustomerInfo customerInfo = new CustomerInfo();
+        customerInfo.setId(updateWxPhoneForm.getCustomerId());
+        customerInfo.setPhone(phoneNumber);
+        return this.updateById(customerInfo);
     }
 }

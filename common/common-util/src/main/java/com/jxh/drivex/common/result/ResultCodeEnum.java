@@ -49,6 +49,7 @@ public enum ResultCodeEnum {
     IMAGE_REVIEW_FAILURE(422, "图片审核不通过"),
 
     SERVICE_ERROR(500, "服务异常"),
+    FEIGN_NULL_RESPONSE(500, "远程调用返回空"),
     ORDER_CREATION_FAILURE(500, "抢单失败"),
     PROFIT_SHARING_FAILURE(500, "分账调用失败"),
 

@@ -4,6 +4,7 @@ import com.jxh.drivex.common.login.DrivexLogin;
 import com.jxh.drivex.common.result.Result;
 import com.jxh.drivex.common.util.AuthContextHolder;
 import com.jxh.drivex.customer.service.CustomerService;
+import com.jxh.drivex.model.form.customer.UpdateWxPhoneForm;
 import com.jxh.drivex.model.vo.customer.CustomerLoginVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +25,7 @@ public class CustomerController {
 
     @Operation(summary = "小程序授权登录")
     @GetMapping("/login/{code}")
-    public Result<String> wxLogin(@PathVariable String code) {
+    public Result<String> wxLogin(@PathVariable("code") String code) {
         return Result.ok(customerService.login(code));
     }
 
@@ -34,6 +35,14 @@ public class CustomerController {
     public Result<CustomerLoginVo> getCustomerLoginInfo() {
         Long customerId = AuthContextHolder.getUserId();
         return Result.ok(customerService.getCustomerLoginInfo(customerId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "更新用户微信手机号")
+    @PostMapping("/updateWxPhone")
+    public Result<Boolean> updateWxPhone(@RequestBody UpdateWxPhoneForm updateWxPhoneForm) {
+        updateWxPhoneForm.setCustomerId(AuthContextHolder.getUserId());
+        return Result.ok(customerService.updateWxPhoneNumber(updateWxPhoneForm));
     }
 
 }
