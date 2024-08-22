@@ -1,4 +1,4 @@
-package com.jxh.drivex.config;
+package com.jxh.drivex.common.config.wx;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

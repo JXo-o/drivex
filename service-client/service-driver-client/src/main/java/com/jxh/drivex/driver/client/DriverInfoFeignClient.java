@@ -44,7 +44,7 @@ public interface DriverInfoFeignClient {
      * 更新司机认证信息
      */
     @PostMapping("/driver/info/updateDriverAuthInfo")
-    Result<Boolean> UpdateDriverAuthInfo(@RequestBody UpdateDriverAuthInfoForm updateDriverAuthInfoForm);
+    Result<Boolean> updateDriverAuthInfo(@RequestBody UpdateDriverAuthInfoForm updateDriverAuthInfoForm);
 
     /**
      * 创建司机人脸模型

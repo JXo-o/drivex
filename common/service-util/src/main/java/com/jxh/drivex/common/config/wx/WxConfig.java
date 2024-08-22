@@ -1,11 +1,10 @@
-package com.jxh.drivex.config;
+package com.jxh.drivex.common.config.wx;
 
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.api.impl.WxMaServiceImpl;
 import cn.binarywang.wx.miniapp.config.impl.WxMaDefaultConfigImpl;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * ClassName: WxConfig
@@ -16,7 +15,6 @@ import org.springframework.context.annotation.Configuration;
  * @version 1.0
  * @date 2024/8/20 9:57
  */
-@Configuration
 @EnableConfigurationProperties(WxProperties.class)
 public class WxConfig {
 

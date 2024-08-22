@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
-//@Configuration
 @EnableConfigurationProperties(RedissonProperties.class)
 @ConditionalOnProperty(prefix = "spring.data.redis", name = "host")
 public class RedissonConfig {

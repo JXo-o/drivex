@@ -44,7 +44,7 @@ public class CustomerInfoController {
     @GetMapping("/getCustomerOpenId/{customerId}")
     Result<String> getCustomerOpenId(@PathVariable("customerId") Long customerId) {
         log.info("getCustomerOpenId customerId:{}", customerId);
-        return Result.ok("openId");
+        return Result.ok(customerInfoService.getById(customerId).getWxOpenId());
     }
 
 }
