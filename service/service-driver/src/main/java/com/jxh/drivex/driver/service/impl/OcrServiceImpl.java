@@ -20,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
-@Import(OcrConfig.class)
 public class OcrServiceImpl implements OcrService {
 
     private final OcrClient ocrClient;

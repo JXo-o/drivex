@@ -1,7 +1,6 @@
 package com.jxh.drivex.driver.service.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.jxh.drivex.common.config.tencent.CosConfig;
 import com.jxh.drivex.common.config.tencent.TencentCloudProperties;
 import com.jxh.drivex.driver.service.CosService;
 import com.jxh.drivex.model.vo.driver.CosUploadVo;
@@ -14,7 +13,6 @@ import com.qcloud.cos.model.StorageClass;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,7 +22,6 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@Import(CosConfig.class)
 public class CosServiceImpl implements CosService {
 
     private final TencentCloudProperties tencentCloudProperties;
@@ -60,7 +57,7 @@ public class CosServiceImpl implements CosService {
         putObjectRequest.setStorageClass(StorageClass.Standard);
         PutObjectResult putObjectResult = cosClient.putObject(putObjectRequest);
         log.info(JSON.toJSONString(putObjectResult));
-        cosClient.shutdown();
+        // cosClient.shutdown();
 
         CosUploadVo cosUploadVo = new CosUploadVo();
         cosUploadVo.setUrl(uploadPath);
@@ -76,7 +73,7 @@ public class CosServiceImpl implements CosService {
                 new Date(System.currentTimeMillis() + 15L * 60L * 1000L),
                 HttpMethodName.GET
         );
-        cosClient.shutdown();
+        // cosClient.shutdown();
         return url.toString();
     }
 }

@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * MybatisPlus配置类
  *
  */
-@EnableTransactionManagement
 @Configuration
+@EnableTransactionManagement
 @MapperScan("com.jxh.drivex.*.mapper")
 public class MybatisPlusConfig {
 

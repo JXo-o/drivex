@@ -4,8 +4,10 @@ import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.profile.ClientProfile;
 import com.tencentcloudapi.common.profile.HttpProfile;
 import com.tencentcloudapi.ocr.v20181119.OcrClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * ClassName: OcrConfig
@@ -16,6 +18,8 @@ import org.springframework.context.annotation.Bean;
  * @version 1.0
  * @date 2024/8/22 21:09
  */
+@Configuration
+@ConditionalOnClass(OcrClient.class)
 @EnableConfigurationProperties(TencentCloudProperties.class)
 public class OcrConfig {
 

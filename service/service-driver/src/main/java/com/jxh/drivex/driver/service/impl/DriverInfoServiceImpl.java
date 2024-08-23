@@ -4,9 +4,7 @@ import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.jxh.drivex.common.config.tencent.IaiConfig;
 import com.jxh.drivex.common.config.tencent.TencentCloudProperties;
-import com.jxh.drivex.common.config.wx.WxConfig;
 import com.jxh.drivex.common.constant.SystemConstant;
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
@@ -32,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.error.WxErrorException;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,7 +38,6 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@Import({WxConfig.class, IaiConfig.class})
 public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverInfo>
         implements DriverInfoService {
 
