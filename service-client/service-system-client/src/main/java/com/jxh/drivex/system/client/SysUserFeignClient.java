@@ -17,7 +17,8 @@ public interface SysUserFeignClient {
     Result<PageVo<SysUser>> findPage(
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit,
-            @RequestBody SysUserQuery sysUserQuery);
+            @RequestBody SysUserQuery sysUserQuery
+    );
 
     /**
      * 获取用户
@@ -47,7 +48,10 @@ public interface SysUserFeignClient {
      * 更新状态
      */
     @GetMapping("/sysUser/updateStatus/{id}/{status}")
-    Result<Boolean> updateStatus(@PathVariable("id") Long id, @PathVariable("status") Integer status);
+    Result<Boolean> updateStatus(
+            @PathVariable("id") Long id,
+            @PathVariable("status") Integer status
+    );
 
 }
 

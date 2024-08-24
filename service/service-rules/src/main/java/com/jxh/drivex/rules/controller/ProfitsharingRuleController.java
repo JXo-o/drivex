@@ -18,7 +18,8 @@ public class ProfitsharingRuleController {
     @Operation(summary = "计算订单分账数据")
     @PostMapping("/calculateOrderProfitsharingFee")
     Result<ProfitsharingRuleResponseVo> calculateOrderProfitsharingFee(
-            @RequestBody ProfitsharingRuleRequestForm profitsharingRuleRequestForm) {
+            @RequestBody ProfitsharingRuleRequestForm profitsharingRuleRequestForm
+    ) {
         return Result.ok();
     }
 

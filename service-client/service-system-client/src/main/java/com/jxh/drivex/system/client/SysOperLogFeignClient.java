@@ -13,12 +13,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(value = "service-system", contextId = "sysOperLog")
 public interface SysOperLogFeignClient {
 
+    /**
+     * 分页查询系统操作日志
+     */
     @PostMapping("/sysOperLog/findPage/{page}/{limit}")
-    public Result<PageVo<SysOperLog>> findPage(
+    Result<PageVo<SysOperLog>> findPage(
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit,
-            @RequestBody SysOperLogQuery sysOperLogQuery);
+            @RequestBody SysOperLogQuery sysOperLogQuery
+    );
 
+    /**
+     * 根据id查询系统操作日志
+     */
     @GetMapping("/sysOperLog/getById/{id}")
     Result<SysOperLog> getById(@PathVariable("id") Long id);
 

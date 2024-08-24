@@ -12,9 +12,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(value = "service-customer", contextId = "customerInfo")
 public interface CustomerInfoFeignClient {
 
+    /**
+     * 客户登录
+     */
     @GetMapping("/customer/info/login/{code}")
     Result<Long> login(@PathVariable("code") String code);
 
+    /**
+     * 获取客户登录信息
+     */
     @GetMapping("/customer/info/getCustomerLoginInfo/{customerId}")
     Result<CustomerLoginVo> getCustomerLoginInfo(@PathVariable("customerId") Long customerId);
 

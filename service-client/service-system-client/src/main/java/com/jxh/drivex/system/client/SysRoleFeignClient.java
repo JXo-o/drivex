@@ -15,7 +15,6 @@ import java.util.Map;
 @FeignClient(value = "service-system", contextId = "sysRole")
 public interface SysRoleFeignClient {
 
-
     /**
      * 获取全部角色列表
      */
@@ -29,7 +28,8 @@ public interface SysRoleFeignClient {
     Result<PageVo<SysRole>> findPage(
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit,
-            @RequestBody SysRoleQuery roleQuery);
+            @RequestBody SysRoleQuery roleQuery
+    );
 
     /**
      * 获取角色信息

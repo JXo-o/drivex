@@ -10,22 +10,22 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-/**
- * <p>
- * 产品列表API接口
- * </p>
- *
- * @author qy
- */
 @FeignClient(value = "service-system", contextId = "sysLoginLog")
 public interface SysLoginLogFeignClient {
 
+    /**
+     * 分页查询登录日志
+     */
     @PostMapping("/sysLoginLog/findPage/{page}/{limit}")
     Result<PageVo<SysLoginLog>> findPage(
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit,
-            @RequestBody SysLoginLogQuery sysLoginLogQuery);
+            @RequestBody SysLoginLogQuery sysLoginLogQuery
+    );
 
+    /**
+     * 根据ID获取登录日志
+     */
     @GetMapping("/sysLoginLog/getById/{id}")
     Result<SysLoginLog> getById(@PathVariable("id") Long id);
 

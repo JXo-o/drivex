@@ -18,6 +18,7 @@ public interface CosFeignClient {
     @PostMapping(value = "/cos/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     Result<CosUploadVo> upload(
             @RequestPart("file") MultipartFile file,
-            @RequestParam("path") String path);
+            @RequestParam("path") String path
+    );
 
 }

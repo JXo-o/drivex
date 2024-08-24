@@ -26,7 +26,8 @@ public interface CouponFeignClient {
     Result<PageVo<NoReceiveCouponVo>> findNoReceivePage(
             @PathVariable("customerId") Long customerId,
             @PathVariable("page") Long page,
-            @PathVariable("limit") Long limit);
+            @PathVariable("limit") Long limit
+    );
 
     /**
      * 查询未使用优惠券分页列表
@@ -35,7 +36,8 @@ public interface CouponFeignClient {
     Result<PageVo<NoUseCouponVo>> findNoUsePage(
             @PathVariable("customerId") Long customerId,
             @PathVariable("page") Long page,
-            @PathVariable("limit") Long limit);
+            @PathVariable("limit") Long limit
+    );
 
     /**
      * 领取优惠券
@@ -43,7 +45,8 @@ public interface CouponFeignClient {
     @GetMapping("/coupon/info/receive/{customerId}/{couponId}")
     Result<Boolean> receive(
             @PathVariable("customerId") Long customerId,
-            @PathVariable("couponId") Long couponId);
+            @PathVariable("couponId") Long couponId
+    );
 
     /**
      * 获取未使用的最佳优惠券信息
@@ -51,7 +54,8 @@ public interface CouponFeignClient {
     @GetMapping("/coupon/info/findAvailableCoupon/{customerId}/{orderAmount}")
     Result<List<AvailableCouponVo>> findAvailableCoupon(
             @PathVariable("customerId") Long customerId,
-            @PathVariable("orderAmount") BigDecimal orderAmount);
+            @PathVariable("orderAmount") BigDecimal orderAmount
+    );
 
     /**
      * 使用优惠券
@@ -67,6 +71,6 @@ public interface CouponFeignClient {
     Result<PageVo<UsedCouponVo>> findUsedPage(
             @PathVariable("customerId") Long customerId,
             @PathVariable("page") Long page,
-            @PathVariable("limit") Long limit);
-
+            @PathVariable("limit") Long limit
+    );
 }

@@ -17,12 +17,21 @@ public interface SysMenuFeignClient {
     @GetMapping("/sysMenu/findNodes")
     Result<List<SysMenu>> findNodes();
 
+    /**
+     * 保存菜单
+     */
     @PostMapping("/sysMenu/save")
     Result<Boolean> save(@RequestBody SysMenu sysMenu);
 
+    /**
+     * 更新菜单
+     */
     @PutMapping("/sysMenu/update")
     Result<Boolean> update(@RequestBody SysMenu permission);
 
+    /**
+     * 删除菜单
+     */
     @DeleteMapping("/sysMenu/remove/{id}")
     Result<Boolean> remove(@PathVariable("id") Long id);
 

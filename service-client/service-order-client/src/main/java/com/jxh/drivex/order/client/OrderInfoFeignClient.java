@@ -35,15 +35,16 @@ public interface OrderInfoFeignClient {
      * 司机抢单
      */
     @GetMapping("/order/info/robNewOrder/{driverId}/{orderId}")
-    Result<Boolean> robNewOrder(@PathVariable("driverId") Long driverId, @PathVariable("orderId") Long orderId);
-
+    Result<Boolean> robNewOrder(
+            @PathVariable("driverId") Long driverId,
+            @PathVariable("orderId") Long orderId
+    );
 
     /**
      * 乘客端查找当前订单
      */
     @GetMapping("/order/info/searchCustomerCurrentOrder/{customerId}")
     Result<CurrentOrderInfoVo> searchCustomerCurrentOrder(@PathVariable("customerId") Long customerId);
-
 
     /**
      * 司机端查找当前订单
@@ -61,7 +62,10 @@ public interface OrderInfoFeignClient {
      * 司机到达起始点
      */
     @GetMapping("/order/info/driverArriveStartLocation/{orderId}/{driverId}")
-    Result<Boolean> driverArriveStartLocation(@PathVariable("orderId") Long orderId, @PathVariable("driverId") Long driverId);
+    Result<Boolean> driverArriveStartLocation(
+            @PathVariable("orderId") Long orderId,
+            @PathVariable("driverId") Long driverId
+    );
 
     /**
      * 更新代驾车辆信息
@@ -79,7 +83,10 @@ public interface OrderInfoFeignClient {
      *  根据时间段获取订单数
      */
     @GetMapping("/order/info/getOrderNumByTime/{startTime}/{endTime}")
-    Result<Long> getOrderNumByTime(@PathVariable("startTime") String startTime, @PathVariable("endTime") String endTime);
+    Result<Long> getOrderNumByTime(
+            @PathVariable("startTime") String startTime,
+            @PathVariable("endTime") String endTime
+    );
 
     /**
      * 结束代驾服务更新订单账单
@@ -91,17 +98,21 @@ public interface OrderInfoFeignClient {
      * 获取乘客订单分页列表
      */
     @GetMapping("/order/info/findCustomerOrderPage/{customerId}/{page}/{limit}")
-    Result<PageVo> findCustomerOrderPage(@PathVariable("customerId") Long customerId,
-                                         @PathVariable("page") Long page,
-                                         @PathVariable("limit") Long limit);
+    Result<PageVo<OrderInfo>> findCustomerOrderPage(
+            @PathVariable("customerId") Long customerId,
+            @PathVariable("page") Long page,
+            @PathVariable("limit") Long limit
+    );
 
     /**
      * 获取司机订单分页列表
      */
     @GetMapping("/order/info/findDriverOrderPage/{driverId}/{page}/{limit}")
-    Result<PageVo> findDriverOrderPage(@PathVariable("driverId") Long driverId,
-                                       @PathVariable("page") Long page,
-                                       @PathVariable("limit") Long limit);
+    Result<PageVo<OrderInfo>> findDriverOrderPage(
+            @PathVariable("driverId") Long driverId,
+            @PathVariable("page") Long page,
+            @PathVariable("limit") Long limit
+    );
 
     /**
      * 根据订单id获取实际账单信息urn
@@ -119,13 +130,19 @@ public interface OrderInfoFeignClient {
      * 司机发送账单信息
      */
     @GetMapping("/order/info/sendOrderBillInfo/{orderId}/{driverId}")
-    Result<Boolean> sendOrderBillInfo(@PathVariable("orderId") Long orderId, @PathVariable("driverId") Long driverId);
+    Result<Boolean> sendOrderBillInfo(
+            @PathVariable("orderId") Long orderId,
+            @PathVariable("driverId") Long driverId
+    );
 
     /**
      * 获取订单支付信息
      */
     @GetMapping("/order/info/getOrderPayVo/{orderNo}/{customerId}")
-    Result<OrderPayVo> getOrderPayVo(@PathVariable("orderNo") String orderNo, @PathVariable("customerId") Long customerId);
+    Result<OrderPayVo> getOrderPayVo(
+            @PathVariable("orderNo") String orderNo,
+            @PathVariable("customerId") Long customerId
+    );
 
     /**
      * 更改订单支付状态
@@ -143,5 +160,8 @@ public interface OrderInfoFeignClient {
      * 更新优惠券金额
      */
     @GetMapping("/order/info/updateCouponAmount/{orderId}/{couponAmount}")
-    Result<Boolean> updateCouponAmount(@PathVariable("orderId") Long orderId, @PathVariable("couponAmount") BigDecimal couponAmount);
+    Result<Boolean> updateCouponAmount(
+            @PathVariable("orderId") Long orderId,
+            @PathVariable("couponAmount") BigDecimal couponAmount
+    );
 }
