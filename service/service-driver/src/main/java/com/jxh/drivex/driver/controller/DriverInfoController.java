@@ -25,12 +25,6 @@ public class DriverInfoController {
         this.driverInfoService = driverInfoService;
     }
 
-    @Operation(summary = "获取司机设置信息")
-    @GetMapping("/getDriverSet/{driverId}")
-    Result<DriverSet> getDriverSet(@PathVariable("driverId") Long driverId) {
-        return Result.ok(new DriverSet());
-    }
-
     @Operation(summary = "小程序授权登录")
     @GetMapping("/login/{code}")
     Result<Long> login(@PathVariable("code") String code) {
@@ -59,6 +53,12 @@ public class DriverInfoController {
     @PostMapping("/creatDriverFaceModel")
     Result<Boolean> creatDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm) {
         return Result.ok(driverInfoService.creatDriverFaceModel(driverFaceModelForm));
+    }
+
+    @Operation(summary = "获取司机设置信息")
+    @GetMapping("/getDriverSet/{driverId}")
+    Result<DriverSet> getDriverSet(@PathVariable("driverId") Long driverId) {
+        return Result.ok(driverInfoService.getDriverSet(driverId));
     }
 
     @Operation(summary = "判断司机当日是否进行过人脸识别")

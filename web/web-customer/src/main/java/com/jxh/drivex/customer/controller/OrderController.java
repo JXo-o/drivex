@@ -2,8 +2,10 @@ package com.jxh.drivex.customer.controller;
 
 import com.jxh.drivex.common.login.DrivexLogin;
 import com.jxh.drivex.common.result.Result;
+import com.jxh.drivex.common.util.AuthContextHolder;
 import com.jxh.drivex.customer.service.OrderService;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
+import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,21 @@ public class OrderController {
     @PostMapping("/expectOrder")
     public Result<ExpectOrderVo> expectOrder(@RequestBody ExpectOrderForm expectOrderForm) {
         return Result.ok(orderService.expectOrder(expectOrderForm));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "乘客下单")
+    @PostMapping("/submitOrder")
+    public Result<Long> submitOrder(@RequestBody SubmitOrderForm submitOrderForm) {
+        submitOrderForm.setCustomerId(AuthContextHolder.getUserId());
+        return Result.ok(orderService.submitOrder(submitOrderForm));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "查询订单状态")
+    @GetMapping("/getOrderStatus/{orderId}")
+    public Result<Integer> getOrderStatus(@PathVariable Long orderId) {
+        return Result.ok(orderService.getOrderStatus(orderId));
     }
 
 }

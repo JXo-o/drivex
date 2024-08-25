@@ -1,6 +1,7 @@
 package com.jxh.drivex.map.controller;
 
 import com.jxh.drivex.common.result.Result;
+import com.jxh.drivex.map.service.LocationService;
 import com.jxh.drivex.model.form.map.OrderServiceLocationForm;
 import com.jxh.drivex.model.form.map.SearchNearByDriverForm;
 import com.jxh.drivex.model.form.map.UpdateDriverLocationForm;
@@ -22,22 +23,28 @@ import java.util.List;
 @RequestMapping("/map/location")
 public class LocationController {
 
+    private final LocationService locationService;
+
+    public LocationController(LocationService locationService) {
+        this.locationService = locationService;
+    }
+
     @Operation(summary = "开启接单服务：更新司机经纬度位置")
     @PostMapping("/updateDriverLocation")
     Result<Boolean> updateDriverLocation(@RequestBody UpdateDriverLocationForm updateDriverLocationForm) {
-        return Result.ok();
+        return Result.ok(locationService.updateDriverLocation(updateDriverLocationForm));
     }
 
     @Operation(summary = "关闭接单服务：删除司机经纬度位置")
     @DeleteMapping("/removeDriverLocation/{driverId}")
     Result<Boolean> removeDriverLocation(@PathVariable("driverId") Long driverId) {
-        return Result.ok();
+        return Result.ok(locationService.removeDriverLocation(driverId));
     }
 
     @Operation(summary = "搜索附近满足条件的司机")
     @PostMapping("/searchNearByDriver")
     Result<List<NearByDriverVo>> searchNearByDriver(@RequestBody SearchNearByDriverForm searchNearByDriverForm) {
-        return Result.ok();
+        return Result.ok(locationService.searchNearByDriver(searchNearByDriverForm));
     }
 
     @Operation(summary = "司机赶往代驾起始点：更新订单地址到缓存")

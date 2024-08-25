@@ -40,6 +40,18 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         this.customerLoginLogMapper = customerLoginLogMapper;
     }
 
+    /**
+     * 处理用户微信小程序登录逻辑。
+     * <ol>
+     *      <li>根据提供的code获取用户的openid。</li>
+     *      <li>检查用户是否存在。如果是首次登录，则创建新用户记录。</li>
+     *      <li>记录用户登录日志。</li>
+     *      <li>返回用户ID。</li>
+     * </ol>
+     *
+     * @param code 微信小程序登录时返回的code
+     * @return 用户ID
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long login(String code) {
@@ -72,6 +84,17 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         return customerInfoToUse.getId();
     }
 
+    /**
+     * 获取用户登录信息，包括是否绑定手机号等。
+     * <ol>
+     *      <li>根据用户ID获取用户信息。</li>
+     *      <li>将用户信息封装到 `CustomerLoginVo` 对象中。</li>
+     *      <li>检查用户是否绑定手机号，并设置相应标记。</li>
+     * </ol>
+     *
+     * @param customerId 用户ID
+     * @return 用户登录信息的VO对象
+     */
     @Override
     public CustomerLoginVo getCustomerLoginInfo(Long customerId) {
         CustomerInfo customerInfo = this.getById(customerId);
@@ -81,6 +104,16 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         return customerInfoVo;
     }
 
+    /**
+     * 更新用户的微信绑定手机号。
+     * <ol>
+     *      <li>通过提供的code获取微信手机号信息。</li>
+     *      <li>将手机号信息更新到数据库中。</li>
+     * </ol>
+     *
+     * @param updateWxPhoneForm 包含用户ID和微信code的表单
+     * @return 更新操作是否成功
+     */
     @Override
     @SneakyThrows
     @Transactional(rollbackFor = Exception.class)

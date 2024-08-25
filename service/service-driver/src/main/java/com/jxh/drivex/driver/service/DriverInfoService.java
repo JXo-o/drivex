@@ -2,6 +2,7 @@ package com.jxh.drivex.driver.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.jxh.drivex.model.entity.driver.DriverInfo;
+import com.jxh.drivex.model.entity.driver.DriverSet;
 import com.jxh.drivex.model.form.driver.DriverFaceModelForm;
 import com.jxh.drivex.model.form.driver.UpdateDriverAuthInfoForm;
 import com.jxh.drivex.model.vo.driver.DriverAuthInfoVo;
@@ -18,4 +19,6 @@ public interface DriverInfoService extends IService<DriverInfo> {
     Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm);
 
     Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm);
+
+    DriverSet getDriverSet(Long driverId);
 }

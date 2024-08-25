@@ -35,6 +35,20 @@ public class CosServiceImpl implements CosService {
         this.cosClient = cosClient;
     }
 
+    /**
+     * 上传文件至腾讯云 COS，并返回文件的存储路径及访问 URL。
+     * <ol>
+     *      <li>设置文件的元数据，包括内容长度、编码和类型。</li>
+     *      <li>生成唯一的文件路径和名称，并创建 `PutObjectRequest` 请求对象。</li>
+     *      <li>使用 COS 客户端执行文件上传，并记录上传结果的日志。</li>
+     *      <li>创建 `CosUploadVo` 对象，设置文件的存储路径和访问 URL。</li>
+     *      <li>返回包含上传文件信息的 `CosUploadVo` 对象。</li>
+     * </ol>
+     *
+     * @param file 要上传的文件
+     * @param path 文件存储路径（不包含文件名）
+     * @return 返回包含文件存储路径和访问 URL 的 `CosUploadVo` 对象
+     */
     @Override
     @SneakyThrows
     public CosUploadVo upload(MultipartFile file, String path) {
@@ -65,6 +79,16 @@ public class CosServiceImpl implements CosService {
         return cosUploadVo;
     }
 
+    /**
+     * 获取文件在 COS 中的临时访问 URL。
+     * <ol>
+     *      <li>生成一个有效期为 15 分钟的临时访问 URL。</li>
+     *      <li>返回生成的 URL 字符串。</li>
+     * </ol>
+     *
+     * @param path 文件在 COS 中的存储路径
+     * @return 文件的临时访问 URL
+     */
     @Override
     public String getImageUrl(String path) {
         URL url = cosClient.generatePresignedUrl(

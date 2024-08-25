@@ -8,6 +8,7 @@ import com.jxh.drivex.model.form.order.UpdateOrderBillForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
 import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.order.*;
+import com.jxh.drivex.order.service.OrderInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -19,16 +20,22 @@ import java.math.BigDecimal;
 @RequestMapping(value="/order/info")
 public class OrderInfoController {
 
+    private final OrderInfoService orderInfoService;
+
+    public OrderInfoController(OrderInfoService orderInfoService) {
+        this.orderInfoService = orderInfoService;
+    }
+
     @Operation(summary = "保存订单信息")
     @PostMapping("/saveOrderInfo")
     Result<Long> saveOrderInfo(@RequestBody OrderInfoForm orderInfoForm) {
-        return Result.ok();
+        return Result.ok(orderInfoService.saveOrderInfo(orderInfoForm));
     }
 
     @Operation(summary = "根据订单id获取订单状态")
     @GetMapping("/getOrderStatus/{orderId}")
     Result<Integer> getOrderStatus(@PathVariable("orderId") Long orderId) {
-        return Result.ok();
+        return Result.ok(orderInfoService.getOrderStatus(orderId));
     }
 
     @Operation(summary = "司机抢单")

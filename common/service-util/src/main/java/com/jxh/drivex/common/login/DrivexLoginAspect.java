@@ -28,7 +28,7 @@ public class DrivexLoginAspect {
         this.jwtUtil = jwtUtil;
     }
 
-    @Before("execution(* com.jxh.drivex.*.controller.*.*(..)) && @annotation(DrivexLogin)")
+    @Before("execution(* com.jxh.drivex.*.controller.*.*(..)) && (@annotation(DrivexLogin) || @within(DrivexLogin))")
     public void doBefore() {
         ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (sra == null) {

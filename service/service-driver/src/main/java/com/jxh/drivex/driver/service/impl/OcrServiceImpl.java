@@ -33,6 +33,19 @@ public class OcrServiceImpl implements OcrService {
         this.cosService = cosService;
     }
 
+    /**
+     * 处理身份证OCR识别请求。
+     * <ol>
+     *      <li>将上传的身份证图片转换为Base64编码。</li>
+     *      <li>构建身份证OCR识别请求并调用OCR服务。</li>
+     *      <li>根据OCR识别结果，封装身份证信息到 `IdCardOcrVo` 对象中。</li>
+     *      <li>将身份证图片上传至COS，并设置相关URL。</li>
+     *      <li>返回包含识别结果和图片URL的 `IdCardOcrVo` 对象。</li>
+     * </ol>
+     *
+     * @param file 包含身份证图像的 `MultipartFile`
+     * @return 识别出的身份证信息封装在 `IdCardOcrVo` 对象中
+     */
     @Override
     @SneakyThrows
     public IdCardOcrVo idCardOcr(MultipartFile file) {
@@ -65,6 +78,19 @@ public class OcrServiceImpl implements OcrService {
         return idCardOcrVo;
     }
 
+    /**
+     * 处理驾驶证OCR识别请求。
+     * <ol>
+     *      <li>将上传的驾驶证图片转换为Base64编码。</li>
+     *      <li>构建驾驶证OCR识别请求并调用OCR服务。</li>
+     *      <li>根据OCR识别结果，封装驾驶证信息到 `DriverLicenseOcrVo` 对象中。</li>
+     *      <li>将驾驶证图片上传至COS，并设置相关URL。</li>
+     *      <li>返回包含识别结果和图片URL的 `DriverLicenseOcrVo` 对象。</li>
+     * </ol>
+     *
+     * @param file 包含驾驶证图像的 `MultipartFile`
+     * @return 识别出的驾驶证信息封装在 `DriverLicenseOcrVo` 对象中
+     */
     @Override
     @SneakyThrows
     public DriverLicenseOcrVo driverLicenseOcr(MultipartFile file) {

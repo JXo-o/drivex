@@ -25,6 +25,16 @@ public class CustomerServiceImpl implements CustomerService {
         this.customerInfoFeignClient = customerInfoFeignClient;
     }
 
+    /**
+     * 登录方法
+     * <p>
+     * 该方法通过调用 `customerInfoFeignClient` 的 `login` 方法，传入微信授权码（code），获取用户 ID。
+     * 然后，使用 `jwtUtil` 创建并返回一个包含用户 ID 的 JWT 令牌。
+     * </p>
+     *
+     * @param code 微信授权码
+     * @return 生成的 JWT 令牌
+     */
     @Override
     public String login(String code) {
         Result<Long> loginResult = customerInfoFeignClient.login(code);
@@ -33,13 +43,11 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerLoginVo getCustomerLoginInfo(Long customerId) {
-        Result<CustomerLoginVo> result = customerInfoFeignClient.getCustomerLoginInfo(customerId);
-        return result.getData();
+        return customerInfoFeignClient.getCustomerLoginInfo(customerId).getData();
     }
 
     @Override
     public Boolean updateWxPhoneNumber(UpdateWxPhoneForm updateWxPhoneForm) {
-        Result<Boolean> result = customerInfoFeignClient.updateWxPhoneNumber(updateWxPhoneForm);
-        return result.getData();
+        return customerInfoFeignClient.updateWxPhoneNumber(updateWxPhoneForm).getData();
     }
 }

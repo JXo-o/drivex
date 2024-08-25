@@ -26,6 +26,16 @@ public class FeeRuleServiceImpl implements FeeRuleService {
         this.feeRuleMapper = feeRuleMapper;
     }
 
+    /**
+     * 计算订单费用。
+     * <p>
+     * 该方法根据传入的费用规则请求表单对象来计算订单费用。首先，从数据库中获取最新的费用规则，
+     * 然后使用 Drools 引擎根据这些规则对费用进行计算。计算结果将封装到 {@link FeeRuleResponseVo} 对象中并返回。
+     * </p>
+     *
+     * @param feeRuleRequestForm 费用规则请求表单对象，包含计算订单费用所需的信息，例如距离、开始时间和等待时间。
+     * @return 返回一个 {@link FeeRuleResponseVo} 对象，其中包含计算后的订单费用和相关信息。
+     */
     @Override
     public FeeRuleResponseVo calculateOrderFee(FeeRuleRequestForm feeRuleRequestForm) {
         FeeRuleRequest feeRuleRequest = new FeeRuleRequest();

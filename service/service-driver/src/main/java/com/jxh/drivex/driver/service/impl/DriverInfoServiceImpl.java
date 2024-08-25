@@ -3,6 +3,7 @@ package com.jxh.drivex.driver.service.impl;
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import com.alibaba.fastjson2.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jxh.drivex.common.config.tencent.TencentCloudProperties;
 import com.jxh.drivex.common.constant.SystemConstant;
@@ -67,6 +68,19 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         this.tencentCloudProperties = tencentCloudProperties;
     }
 
+    /**
+     * 根据微信登录凭证 `code` 登录司机账号。
+     * <ol>
+     *      <li>使用微信服务获取用户的 OpenID。</li>
+     *      <li>根据 OpenID 查询司机信息。如果司机不存在，则创建新账号。</li>
+     *      <li>初始化司机的设置和账户信息，并记录登录日志。</li>
+     *      <li>返回登录的司机ID。</li>
+     * </ol>
+     *
+     * @param code 微信登录凭证
+     * @return 登录的司机ID
+     * @throws DrivexException 如果微信登录凭证无效或发生错误时抛出异常
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long login(String code) {
@@ -111,6 +125,18 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return driverInfoToUse.getId();
     }
 
+    /**
+     * 获取司机的登录信息。
+     * <ol>
+     *      <li>根据司机ID查询司机信息。</li>
+     *      <li>将司机信息复制到返回的 `DriverLoginVo` 对象中。</li>
+     *      <li>设置 `isArchiveFace` 属性，表示司机是否已存档人脸模型。</li>
+     *      <li>返回司机的登录信息。</li>
+     * </ol>
+     *
+     * @param driverId 司机ID
+     * @return 司机的登录信息，包括是否已存档人脸模型
+     */
     @Override
     public DriverLoginVo getDriverLoginInfo(Long driverId) {
         DriverInfo driverInfo = this.getById(driverId);
@@ -120,6 +146,18 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return driverLoginVo;
     }
 
+    /**
+     * 获取司机的认证信息，包括身份证和驾驶证的展示URL。
+     * <ol>
+     *      <li>根据司机ID查询司机信息。</li>
+     *      <li>将司机信息复制到返回的 `DriverAuthInfoVo` 对象中。</li>
+     *      <li>使用COS服务获取并设置身份证和驾驶证的展示URL。</li>
+     *      <li>返回司机的认证信息。</li>
+     * </ol>
+     *
+     * @param driverId 司机ID
+     * @return 司机的认证信息
+     */
     @Override
     public DriverAuthInfoVo getDriverAuthInfo(Long driverId) {
         DriverInfo driverInfo = this.getById(driverId);
@@ -134,6 +172,18 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return driverAuthInfoVo;
     }
 
+    /**
+     * 更新司机的认证信息。
+     * <ol>
+     *      <li>根据表单中的司机ID创建 `DriverInfo` 对象。</li>
+     *      <li>将表单中的认证信息复制到 `DriverInfo` 对象中。</li>
+     *      <li>更新司机的认证信息到数据库。</li>
+     *      <li>返回更新是否成功的结果。</li>
+     * </ol>
+     *
+     * @param updateDriverAuthInfoForm 更新司机认证信息的表单
+     * @return 更新是否成功
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm) {
@@ -143,6 +193,19 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return this.updateById(driverInfo);
     }
 
+    /**
+     * 创建司机的人脸模型。
+     * <ol>
+     *      <li>根据司机ID获取司机信息。</li>
+     *      <li>构建创建人脸模型的请求参数。</li>
+     *      <li>调用腾讯云人脸识别服务创建人脸模型。</li>
+     *      <li>如果已有的人脸模型ID存在，则更新为新的模型ID。</li>
+     *      <li>返回创建是否成功的结果。</li>
+     * </ol>
+     *
+     * @param driverFaceModelForm 创建司机人脸模型的表单
+     * @return 创建是否成功
+     */
     @Override
     @SneakyThrows
     public Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
@@ -162,5 +225,18 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
             this.updateById(driverInfo);
         }
         return true;
+    }
+
+    /**
+     * 获取司机的设置信息。
+     *
+     * @param driverId 司机ID
+     * @return 司机的设置信息
+     */
+    @Override
+    public DriverSet getDriverSet(Long driverId) {
+        LambdaQueryWrapper<DriverSet> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(DriverSet::getDriverId, driverId);
+        return driverSetMapper.selectOne(queryWrapper);
     }
 }
