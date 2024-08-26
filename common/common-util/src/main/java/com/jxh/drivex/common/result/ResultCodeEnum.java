@@ -12,6 +12,7 @@ public enum ResultCodeEnum {
     WX_CODE_ERROR(400, "微信code错误"),
     VALIDATE_CODE_ERROR(400, "验证码错误"),
     PHONE_CODE_ERROR(400, "手机验证码错误"),
+    XXL_JOB_ERROR(400, "xxl-job调用失败"),
     DROOLS_RULE_ERROR(400, "规则引擎错误"),
     START_LOCATION_DISTANCE_ERROR(400, "距离代驾起始点1公里以内才能确认"),
     END_LOCATION_DISTANCE_ERROR(400, "距离代驾终点2公里以内才能确认"),

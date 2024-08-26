@@ -1,6 +1,7 @@
 package com.jxh.drivex.customer.service.impl;
 
 import com.jxh.drivex.customer.service.OrderService;
+import com.jxh.drivex.dispatch.client.NewOrderFeignClient;
 import com.jxh.drivex.map.client.MapFeignClient;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
@@ -8,6 +9,7 @@ import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
 import com.jxh.drivex.model.form.rules.FeeRuleRequestForm;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
+import com.jxh.drivex.model.vo.dispatch.NewOrderTaskVo;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
 import com.jxh.drivex.model.vo.rules.FeeRuleResponseVo;
 import com.jxh.drivex.order.client.OrderInfoFeignClient;
@@ -25,15 +27,18 @@ public class OrderServiceImpl implements OrderService {
     private final MapFeignClient mapFeignClient;
     private final FeeRuleFeignClient feeRuleFeignClient;
     private final OrderInfoFeignClient orderInfoFeignClient;
+    private final NewOrderFeignClient newOrderFeignClient;
 
     public OrderServiceImpl(
             MapFeignClient mapFeignClient,
             FeeRuleFeignClient feeRuleFeignClient,
-            OrderInfoFeignClient orderInfoFeignClient
+            OrderInfoFeignClient orderInfoFeignClient,
+            NewOrderFeignClient newOrderFeignClient
     ) {
         this.mapFeignClient = mapFeignClient;
         this.feeRuleFeignClient = feeRuleFeignClient;
         this.orderInfoFeignClient = orderInfoFeignClient;
+        this.newOrderFeignClient = newOrderFeignClient;
     }
 
     /**
@@ -76,6 +81,7 @@ public class OrderServiceImpl implements OrderService {
      *     <li>根据 `DrivingLineVo` 重新计算订单费用，获取 `FeeRuleResponseVo` 对象。</li>
      *     <li>封装订单信息到 `OrderInfoForm` 对象中，并设置预期距离和预期金额。</li>
      *     <li>调用远程服务保存订单信息。</li>
+     *     <li>添加并执行任务调度，每分钟执行一次，搜索附近司机。</li>
      * </ol>
      *
      * @param submitOrderForm 乘客下单请求表单，包含订单相关信息
@@ -91,9 +97,16 @@ public class OrderServiceImpl implements OrderService {
         BeanUtils.copyProperties(submitOrderForm, orderInfoForm);
         orderInfoForm.setExpectDistance(drivingLineVo.getDistance());
         orderInfoForm.setExpectAmount(feeRuleResponseVo.getTotalAmount());
-        //TODO 启动任务调度
+        Long orderId = orderInfoFeignClient.saveOrderInfo(orderInfoForm).getData();
 
-        return orderInfoFeignClient.saveOrderInfo(orderInfoForm).getData();
+        NewOrderTaskVo newOrderDispatchVo = new NewOrderTaskVo();
+        newOrderDispatchVo.setOrderId(orderId);
+        BeanUtils.copyProperties(orderInfoForm, newOrderDispatchVo);
+        newOrderDispatchVo.setExpectTime(drivingLineVo.getDuration());
+        newOrderDispatchVo.setCreateTime(new Date());
+        Long jobId = newOrderFeignClient.addAndStartTask(newOrderDispatchVo).getData();
+        log.info("订单id为： {}，绑定任务id为：{}", orderId, jobId);
+        return orderId;
     }
 
     /**

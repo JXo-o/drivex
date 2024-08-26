@@ -1,6 +1,7 @@
 package com.jxh.drivex.dispatch.controller;
 
 import com.jxh.drivex.common.result.Result;
+import com.jxh.drivex.dispatch.service.NewOrderService;
 import com.jxh.drivex.model.vo.dispatch.NewOrderTaskVo;
 import com.jxh.drivex.model.vo.order.NewOrderDataVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,22 +17,28 @@ import java.util.List;
 @RequestMapping("/dispatch/newOrder")
 public class NewOrderController {
 
-    @Operation(summary = "添加新订单任务")
+    private final NewOrderService newOrderService;
+
+    public NewOrderController(NewOrderService newOrderService) {
+        this.newOrderService = newOrderService;
+    }
+
+    @Operation(summary = "添加并开始新订单任务调度")
     @PostMapping("/addAndStartTask")
-    Result<Long> addAndStartTask(@RequestBody NewOrderTaskVo newOrderDispatchVo) {
-        return Result.ok();
+    Result<Long> addAndStartTask(@RequestBody NewOrderTaskVo newOrderTaskVo) {
+        return Result.ok(newOrderService.addAndStartTask(newOrderTaskVo));
     }
 
     @Operation(summary = "查询司机新订单数据")
     @GetMapping("/findNewOrderQueueData/{driverId}")
     Result<List<NewOrderDataVo>> findNewOrderQueueData(@PathVariable("driverId") Long driverId) {
-        return Result.ok();
+        return Result.ok(newOrderService.findNewOrderQueueData(driverId));
     }
 
     @Operation(summary = "清空新订单队列数据")
     @GetMapping("/clearNewOrderQueueData/{driverId}")
     Result<Boolean> clearNewOrderQueueData(@PathVariable("driverId") Long driverId) {
-        return Result.ok();
+        return Result.ok(newOrderService.clearNewOrderQueueData(driverId));
     }
 }
 

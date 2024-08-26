@@ -18,7 +18,7 @@ public interface NewOrderFeignClient {
      * 添加新订单任务
      */
     @PostMapping("/dispatch/newOrder/addAndStartTask")
-    Result<Long> addAndStartTask(@RequestBody NewOrderTaskVo newOrderDispatchVo);
+    Result<Long> addAndStartTask(@RequestBody NewOrderTaskVo newOrderTaskVo);
 
     /**
      * 查询司机新订单数据

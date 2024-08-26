@@ -22,9 +22,12 @@ public class MapServiceImpl implements MapService {
     private final String key;
     private final RestTemplate restTemplate;
 
-    public MapServiceImpl(@Value("${tencent.map.key}") String key) {
+    public MapServiceImpl(
+            @Value("${tencent.map.key}") String key,
+            RestTemplate restTemplate
+    ) {
         this.key = key;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     /**
