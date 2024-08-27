@@ -64,13 +64,13 @@ public class DriverInfoController {
     @Operation(summary = "判断司机当日是否进行过人脸识别")
     @GetMapping("/isFaceRecognition/{driverId}")
     Result<Boolean> isFaceRecognition(@PathVariable("driverId") Long driverId) {
-        return Result.ok(true);
+        return Result.ok(driverInfoService.isFaceRecognition(driverId));
     }
 
     @Operation(summary = "验证司机人脸")
     @PostMapping("/verifyDriverFace")
     Result<Boolean> verifyDriverFace(@RequestBody DriverFaceModelForm driverFaceModelForm) {
-        return Result.ok(true);
+        return Result.ok(driverInfoService.verifyDriverFace(driverFaceModelForm));
     }
 
     @Operation(summary = "更新接单状态")
@@ -79,7 +79,7 @@ public class DriverInfoController {
             @PathVariable("driverId") Long driverId,
             @PathVariable("status") Integer status
     ) {
-        return Result.ok(true);
+        return Result.ok(driverInfoService.updateServiceStatus(driverId, status));
     }
 
     @Operation(summary = "获取司机基本信息")

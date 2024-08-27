@@ -44,7 +44,7 @@ public class OrderInfoController {
             @PathVariable("driverId") Long driverId,
             @PathVariable("orderId") Long orderId
     ) {
-        return Result.ok();
+        return Result.ok(orderInfoService.robNewOrder(driverId, orderId));
     }
 
     @Operation(summary = "乘客端查找当前订单")

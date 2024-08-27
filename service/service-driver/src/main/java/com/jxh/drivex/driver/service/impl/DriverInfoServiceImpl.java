@@ -4,37 +4,36 @@ import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jxh.drivex.common.config.tencent.TencentCloudProperties;
 import com.jxh.drivex.common.constant.SystemConstant;
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
-import com.jxh.drivex.driver.mapper.DriverAccountMapper;
-import com.jxh.drivex.driver.mapper.DriverInfoMapper;
-import com.jxh.drivex.driver.mapper.DriverLoginLogMapper;
-import com.jxh.drivex.driver.mapper.DriverSetMapper;
+import com.jxh.drivex.driver.mapper.*;
 import com.jxh.drivex.driver.service.CosService;
 import com.jxh.drivex.driver.service.DriverInfoService;
-import com.jxh.drivex.model.entity.driver.DriverAccount;
-import com.jxh.drivex.model.entity.driver.DriverInfo;
-import com.jxh.drivex.model.entity.driver.DriverLoginLog;
-import com.jxh.drivex.model.entity.driver.DriverSet;
+import com.jxh.drivex.model.entity.driver.*;
 import com.jxh.drivex.model.form.driver.DriverFaceModelForm;
 import com.jxh.drivex.model.form.driver.UpdateDriverAuthInfoForm;
 import com.jxh.drivex.model.vo.driver.DriverAuthInfoVo;
 import com.jxh.drivex.model.vo.driver.DriverLoginVo;
+import com.tencentcloudapi.common.exception.TencentCloudSDKException;
+import com.tencentcloudapi.common.profile.ClientProfile;
+import com.tencentcloudapi.common.profile.HttpProfile;
 import com.tencentcloudapi.iai.v20200303.IaiClient;
-import com.tencentcloudapi.iai.v20200303.models.CreatePersonRequest;
-import com.tencentcloudapi.iai.v20200303.models.CreatePersonResponse;
+import com.tencentcloudapi.iai.v20200303.models.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.error.WxErrorException;
 import org.apache.logging.log4j.util.Strings;
+import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.Optional;
 
 @Slf4j
@@ -49,6 +48,7 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
     private final CosService cosService;
     private final IaiClient iaiClient;
     private final TencentCloudProperties tencentCloudProperties;
+    private final DriverFaceRecognitionMapper driverFaceRecognitionMapper;
 
     public DriverInfoServiceImpl(
             WxMaService wxMaService,
@@ -57,7 +57,8 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
             DriverLoginLogMapper driverLoginLogMapper,
             CosService cosService,
             IaiClient iaiClient,
-            TencentCloudProperties tencentCloudProperties
+            TencentCloudProperties tencentCloudProperties,
+            DriverFaceRecognitionMapper driverFaceRecognitionMapper
     ) {
         this.wxMaService = wxMaService;
         this.driverSetMapper = driverSetMapper;
@@ -66,6 +67,7 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         this.cosService = cosService;
         this.iaiClient = iaiClient;
         this.tencentCloudProperties = tencentCloudProperties;
+        this.driverFaceRecognitionMapper = driverFaceRecognitionMapper;
     }
 
     /**
@@ -239,4 +241,73 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         queryWrapper.eq(DriverSet::getDriverId, driverId);
         return driverSetMapper.selectOne(queryWrapper);
     }
+
+    /**
+     * 判断司机当日是否进行过人脸识别。
+     * @param driverId 司机ID
+     * @return 是否进行过人脸识别
+     */
+    @Override
+    public Boolean isFaceRecognition(Long driverId) {
+        LambdaQueryWrapper<DriverFaceRecognition> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(DriverFaceRecognition::getDriverId, driverId);
+        queryWrapper.eq(DriverFaceRecognition::getFaceDate, new DateTime().toString("yyyy-MM-dd"));
+        return driverFaceRecognitionMapper.selectCount(queryWrapper) != 0;
+    }
+
+    /**
+     * 验证司机人脸。
+     * @param driverFaceModelForm 司机人脸验证表单
+     * @return 验证是否成功
+     */
+    @Override
+    @SneakyThrows
+    public Boolean verifyDriverFace(DriverFaceModelForm driverFaceModelForm) {
+        VerifyFaceRequest req = new VerifyFaceRequest();
+        req.setImage(driverFaceModelForm.getImageBase64());
+        req.setPersonId(String.valueOf(driverFaceModelForm.getDriverId()));
+        VerifyFaceResponse resp = iaiClient.VerifyFace(req);
+        if (resp.getIsMatch()) {
+            if(this.detectLiveFace(driverFaceModelForm.getImageBase64())) {
+                DriverFaceRecognition driverFaceRecognition = new DriverFaceRecognition();
+                driverFaceRecognition.setDriverId(driverFaceModelForm.getDriverId());
+                driverFaceRecognition.setFaceDate(new Date());
+                driverFaceRecognitionMapper.insert(driverFaceRecognition);
+                return true;
+            }
+        }
+        throw new DrivexException(ResultCodeEnum.FACE_RECOGNITION_FAILURE);
+    }
+
+    /**
+     * 更新司机的服务状态。
+     * @param driverId 司机ID
+     * @param status 服务状态
+     * @return 更新是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateServiceStatus(Long driverId, Integer status) {
+        LambdaUpdateWrapper<DriverSet> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(DriverSet::getDriverId, driverId).set(DriverSet::getServiceStatus, status);
+        driverSetMapper.update(updateWrapper);
+        return true;
+    }
+
+    /**
+     * 人脸静态活体检测
+     * 文档地址：
+     * <a href="https://cloud.tencent.com/document/api/867/48501"/>
+     * <a href="https://console.cloud.tencent.com/api/explorer?Product=iai&Version=2020-03-03&Action=DetectLiveFace"/>
+     * @param imageBase64 图片base64
+     * @return 是否活体
+     */
+    @SneakyThrows
+    private Boolean detectLiveFace(String imageBase64) {
+        DetectLiveFaceRequest req = new DetectLiveFaceRequest();
+        req.setImage(imageBase64);
+        DetectLiveFaceResponse resp = iaiClient.DetectLiveFace(req);
+        return resp.getIsLiveness();
+    }
+
 }

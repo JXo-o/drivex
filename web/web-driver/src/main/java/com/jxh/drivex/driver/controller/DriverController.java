@@ -63,5 +63,37 @@ public class DriverController {
         return Result.ok(driverService.creatDriverFaceModel(driverFaceModelForm));
     }
 
+    @DrivexLogin
+    @Operation(summary = "判断司机当日是否进行过人脸识别")
+    @GetMapping("/isFaceRecognition")
+    Result<Boolean> isFaceRecognition() {
+        Long driverId = AuthContextHolder.getUserId();
+        return Result.ok(driverService.isFaceRecognition(driverId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "验证司机人脸")
+    @PostMapping("/verifyDriverFace")
+    public Result<Boolean> verifyDriverFace(@RequestBody DriverFaceModelForm driverFaceModelForm) {
+        driverFaceModelForm.setDriverId(AuthContextHolder.getUserId());
+        return Result.ok(driverService.verifyDriverFace(driverFaceModelForm));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "开始接单服务")
+    @GetMapping("/startService")
+    public Result<Boolean> startService() {
+        Long driverId = AuthContextHolder.getUserId();
+        return Result.ok(driverService.startService(driverId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "停止接单服务")
+    @GetMapping("/stopService")
+    public Result<Boolean> stopService() {
+        Long driverId = AuthContextHolder.getUserId();
+        return Result.ok(driverService.stopService(driverId));
+    }
+
 }
 

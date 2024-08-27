@@ -29,7 +29,7 @@ public enum ResultCodeEnum {
     FORBIDDEN(403, "没有权限"),
     ILLEGAL_REQUEST(403, "非法请求"),
     SERVICE_NOT_STARTED(403, "未开启代驾服务，不能更新位置信息"),
-    FACE_RECOGNITION_FAILURE(403, "当日未进行人脸识别"),
+    FACE_RECOGNITION_FAILURE(403, "当日未进行人脸识别或识别失败"),
     COUPON_LIMIT_EXCEEDED(403, "超出领取数量"),
     ACCOUNT_DISABLED(403, "账号已停用"),
 

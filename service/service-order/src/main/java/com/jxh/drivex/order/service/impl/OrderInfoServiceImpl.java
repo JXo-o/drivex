@@ -3,6 +3,8 @@ package com.jxh.drivex.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jxh.drivex.common.constant.RedisConstant;
+import com.jxh.drivex.common.execption.DrivexException;
+import com.jxh.drivex.common.result.ResultCodeEnum;
 import com.jxh.drivex.model.entity.order.OrderInfo;
 import com.jxh.drivex.model.entity.order.OrderStatusLog;
 import com.jxh.drivex.model.enums.OrderStatus;
@@ -10,6 +12,8 @@ import com.jxh.drivex.model.form.order.OrderInfoForm;
 import com.jxh.drivex.order.mapper.OrderInfoMapper;
 import com.jxh.drivex.order.mapper.OrderStatusLogMapper;
 import com.jxh.drivex.order.service.OrderInfoService;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -25,13 +29,19 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     private final RedisTemplate<String, String> redisTemplate;
     private final OrderStatusLogMapper orderStatusLogMapper;
+    private final OrderInfoMapper orderInfoMapper;
+    private final RedissonClient redissonClient;
 
     public OrderInfoServiceImpl(
             RedisTemplate<String, String> redisTemplate,
-            OrderStatusLogMapper orderStatusLogMapper
+            OrderStatusLogMapper orderStatusLogMapper,
+            OrderInfoMapper orderInfoMapper,
+            RedissonClient redissonClient
     ) {
         this.redisTemplate = redisTemplate;
         this.orderStatusLogMapper = orderStatusLogMapper;
+        this.orderInfoMapper = orderInfoMapper;
+        this.redissonClient = redissonClient;
     }
 
     /**
@@ -84,6 +94,71 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             return OrderStatus.NULL_ORDER.getStatus();
         }
         return orderInfo.getStatus();
+    }
+
+    /**
+     * 尝试让司机抢新订单。
+     *
+     * <ol>
+     *   <li>首先检查 Redis 中是否存在 {@code ORDER_ACCEPT_MARK} 键，以确定订单是否还可以被抢。</li>
+     *   <li>如果该键不存在，抛出 {@code DrivexException} 异常，表示抢单失败。</li>
+     *   <li>使用 Redisson 初始化一个分布式锁，锁的键为 {@code ROB_NEW_ORDER_LOCK} 加上订单 ID。</li>
+     *   <li>尝试使用非阻塞方式获取锁，指定等待时间和加锁时间。</li>
+     *   <li>如果获取到锁：</li>
+     *   <ol>
+     *     <li>双重检查锁：再次检查 {@code ORDER_ACCEPT_MARK} 键是否存在，以防止重复抢单。</li>
+     *     <li>如果键不存在，抛出 {@code DrivexException} 异常，表示抢单失败。</li>
+     *     <li>更新订单状态，将订单状态改为已接受，并记录司机 ID 和接受时间。</li>
+     *     <li>如果更新订单失败，抛出 {@code DrivexException} 异常，表示抢单失败。</li>
+     *     <li>记录日志，记录订单 ID 和新的订单状态。</li>
+     *     <li>删除 Redis 中的订单标识 {@code ORDER_ACCEPT_MARK}。</li>
+     *   </ol>
+     *   <li>如果发生 {@code InterruptedException} 异常，抛出 {@code DrivexException} 异常，表示抢单失败。</li>
+     *   <li>在 `finally` 块中，如果锁仍然被持有，释放锁。</li>
+     * </ol>
+     *
+     * @param driverId 司机的 ID
+     * @param orderId 订单的 ID
+     * @return {@code true} 表示抢单成功
+     * @throws DrivexException 如果抢单失败时抛出异常
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean robNewOrder(Long driverId, Long orderId) {
+        if(Boolean.FALSE.equals(redisTemplate.hasKey(RedisConstant.ORDER_ACCEPT_MARK))) {
+            throw new DrivexException(ResultCodeEnum.ORDER_CREATION_FAILURE);
+        }
+        RLock lock = redissonClient.getLock(RedisConstant.ROB_NEW_ORDER_LOCK + orderId);
+        try {
+            boolean flag = lock.tryLock(
+                    RedisConstant.ROB_NEW_ORDER_LOCK_WAIT_TIME,
+                    RedisConstant.ROB_NEW_ORDER_LOCK_LEASE_TIME,
+                    TimeUnit.SECONDS
+            );
+            if (flag) {
+                if(Boolean.FALSE.equals(redisTemplate.hasKey(RedisConstant.ORDER_ACCEPT_MARK))) {
+                    throw new DrivexException(ResultCodeEnum.ORDER_CREATION_FAILURE);
+                }
+                OrderInfo orderInfo = new OrderInfo();
+                orderInfo.setId(orderId);
+                orderInfo.setStatus(OrderStatus.ACCEPTED.getStatus());
+                orderInfo.setAcceptTime(new Date());
+                orderInfo.setDriverId(driverId);
+                int rows = orderInfoMapper.updateById(orderInfo);
+                if(rows != 1) {
+                    throw new DrivexException(ResultCodeEnum.ORDER_CREATION_FAILURE);
+                }
+                this.log(orderId, orderInfo.getStatus());
+                redisTemplate.delete(RedisConstant.ORDER_ACCEPT_MARK);
+            }
+        } catch (InterruptedException e) {
+            throw new DrivexException(ResultCodeEnum.ORDER_CREATION_FAILURE);
+        } finally {
+            if(lock.isLocked()) {
+                lock.unlock();
+            }
+        }
+        return true;
     }
 
     /**
