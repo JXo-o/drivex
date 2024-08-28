@@ -1,15 +1,28 @@
 package com.jxh.drivex.map.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.jxh.drivex.common.constant.RedisConstant;
 import com.jxh.drivex.common.constant.SystemConstant;
 import com.jxh.drivex.driver.client.DriverInfoFeignClient;
+import com.jxh.drivex.map.repository.OrderServiceLocationRepository;
 import com.jxh.drivex.map.service.LocationService;
 import com.jxh.drivex.model.entity.driver.DriverSet;
+import com.jxh.drivex.model.entity.map.OrderServiceLocation;
+import com.jxh.drivex.model.form.map.OrderServiceLocationForm;
 import com.jxh.drivex.model.form.map.SearchNearByDriverForm;
 import com.jxh.drivex.model.form.map.UpdateDriverLocationForm;
+import com.jxh.drivex.model.form.map.UpdateOrderLocationForm;
 import com.jxh.drivex.model.vo.map.NearByDriverVo;
+import com.jxh.drivex.model.vo.map.OrderLocationVo;
+import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.*;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -17,7 +30,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -25,13 +40,19 @@ public class LocationServiceImpl implements LocationService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final DriverInfoFeignClient driverInfoFeignClient;
+    private final OrderServiceLocationRepository orderServiceLocationRepository;
+    private final MongoTemplate mongoTemplate;
 
     public LocationServiceImpl(
             RedisTemplate<String, String> redisTemplate,
-            DriverInfoFeignClient driverInfoFeignClient
+            DriverInfoFeignClient driverInfoFeignClient,
+            OrderServiceLocationRepository orderServiceLocationRepository,
+            MongoTemplate mongoTemplate
     ) {
         this.redisTemplate = redisTemplate;
         this.driverInfoFeignClient = driverInfoFeignClient;
+        this.orderServiceLocationRepository = orderServiceLocationRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
     /**
@@ -118,6 +139,76 @@ public class LocationServiceImpl implements LocationService {
             }
         }
         return nearbyDrivers;
+    }
+
+    /**
+     * 司机赶往代驾起始点：更新订单地址到缓存。
+     *
+     * @param updateOrderLocationForm 订单ID、经度和纬度
+     * @return 操作是否成功，返回true表示成功
+     */
+    @Override
+    public Boolean updateOrderLocationToCache(UpdateOrderLocationForm updateOrderLocationForm) {
+        OrderLocationVo orderLocationVo = new OrderLocationVo();
+        orderLocationVo.setLongitude(updateOrderLocationForm.getLongitude());
+        orderLocationVo.setLatitude(updateOrderLocationForm.getLatitude());
+        redisTemplate.opsForValue().set(
+                RedisConstant.UPDATE_ORDER_LOCATION + updateOrderLocationForm.getOrderId(),
+                JSONObject.toJSONString(orderLocationVo)
+        );
+        return true;
+    }
+
+    /**
+     * 司机赶往代驾起始点：获取订单经纬度位置。
+     *
+     * @param orderId 订单ID
+     * @return 订单经纬度位置
+     */
+    @Override
+    public OrderLocationVo getCacheOrderLocation(Long orderId) {
+        return JSONObject.parseObject(
+                redisTemplate.opsForValue().get(RedisConstant.UPDATE_ORDER_LOCATION + orderId),
+                OrderLocationVo.class
+        );
+    }
+
+    /**
+     * 保存代驾服务订单位置，存入mongodb。
+     *
+     * @param orderLocationServiceFormList 订单位置信息列表
+     * @return 操作是否成功，返回true表示成功
+     */
+    @Override
+    public Boolean saveOrderServiceLocation(List<OrderServiceLocationForm> orderLocationServiceFormList) {
+        List<OrderServiceLocation> list = new ArrayList<>();
+        orderLocationServiceFormList.forEach(item -> {
+            OrderServiceLocation orderServiceLocation = new OrderServiceLocation();
+            BeanUtils.copyProperties(item, orderServiceLocation);
+            orderServiceLocation.setId(ObjectId.get().toString());
+            orderServiceLocation.setCreateTime(new Date());
+            list.add(orderServiceLocation);
+        });
+        orderServiceLocationRepository.saveAll(list);
+        return true;
+    }
+
+    /**
+     * 获取订单服务最后一个位置信息。
+     *
+     * @param orderId 订单ID
+     * @return 订单服务最后一个位置信息
+     */
+    @Override
+    public OrderServiceLastLocationVo getOrderServiceLastLocation(Long orderId) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("orderId").is(orderId));
+        query.with(Sort.by(Sort.Order.desc("createTime")));
+        query.limit(1);
+        OrderServiceLocation orderServiceLocation = mongoTemplate.findOne(query, OrderServiceLocation.class);
+        OrderServiceLastLocationVo orderServiceLastLocationVo = new OrderServiceLastLocationVo();
+        BeanUtils.copyProperties(Objects.requireNonNull(orderServiceLocation), orderServiceLastLocationVo);
+        return orderServiceLastLocationVo;
     }
 
     /**

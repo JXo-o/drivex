@@ -6,6 +6,7 @@ import com.jxh.drivex.model.entity.driver.DriverSet;
 import com.jxh.drivex.model.form.driver.DriverFaceModelForm;
 import com.jxh.drivex.model.form.driver.UpdateDriverAuthInfoForm;
 import com.jxh.drivex.model.vo.driver.DriverAuthInfoVo;
+import com.jxh.drivex.model.vo.driver.DriverInfoVo;
 import com.jxh.drivex.model.vo.driver.DriverLoginVo;
 
 public interface DriverInfoService extends IService<DriverInfo> {
@@ -27,4 +28,6 @@ public interface DriverInfoService extends IService<DriverInfo> {
     Boolean verifyDriverFace(DriverFaceModelForm driverFaceModelForm);
 
     Boolean updateServiceStatus(Long driverId, Integer status);
+
+    DriverInfoVo getDriverInfo(Long driverId);
 }

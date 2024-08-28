@@ -6,8 +6,14 @@ import com.jxh.drivex.common.util.AuthContextHolder;
 import com.jxh.drivex.customer.service.OrderService;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
+import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
+import com.jxh.drivex.model.vo.driver.DriverInfoVo;
+import com.jxh.drivex.model.vo.map.DrivingLineVo;
+import com.jxh.drivex.model.vo.map.OrderLocationVo;
+import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +35,8 @@ public class OrderController {
     @Operation(summary = "查找乘客端当前订单")
     @GetMapping("/searchCustomerCurrentOrder")
     public Result<CurrentOrderInfoVo> searchCustomerCurrentOrder() {
-        CurrentOrderInfoVo currentOrderInfoVo = new CurrentOrderInfoVo();
-        currentOrderInfoVo.setIsHasCurrentOrder(false);
-        return Result.ok(currentOrderInfoVo);
+        Long customerId = AuthContextHolder.getUserId();
+        return Result.ok(orderService.searchCustomerCurrentOrder(customerId));
     }
 
     @DrivexLogin
@@ -54,6 +59,43 @@ public class OrderController {
     @GetMapping("/getOrderStatus/{orderId}")
     public Result<Integer> getOrderStatus(@PathVariable Long orderId) {
         return Result.ok(orderService.getOrderStatus(orderId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "获取订单信息")
+    @GetMapping("/getOrderInfo/{orderId}")
+    public Result<OrderInfoVo> getOrderInfo(@PathVariable Long orderId) {
+        Long customerId = AuthContextHolder.getUserId();
+        return Result.ok(orderService.getOrderInfo(orderId, customerId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "根据订单id获取司机基本信息")
+    @GetMapping("/getDriverInfo/{orderId}")
+    public Result<DriverInfoVo> getDriverInfo(@PathVariable Long orderId) {
+        Long customerId = AuthContextHolder.getUserId();
+        return Result.ok(orderService.getDriverInfo(orderId, customerId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "司机赶往代驾起始点：获取订单经纬度位置")
+    @GetMapping("/getCacheOrderLocation/{orderId}")
+    public Result<OrderLocationVo> getOrderLocation(@PathVariable Long orderId) {
+        return Result.ok(orderService.getCacheOrderLocation(orderId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "计算最佳驾驶线路")
+    @PostMapping("/calculateDrivingLine")
+    public Result<DrivingLineVo> calculateDrivingLine(@RequestBody CalculateDrivingLineForm calculateDrivingLineForm) {
+        return Result.ok(orderService.calculateDrivingLine(calculateDrivingLineForm));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "代驾服务：获取订单服务最后一个位置信息")
+    @GetMapping("/getOrderServiceLastLocation/{orderId}")
+    public Result<OrderServiceLastLocationVo> getOrderServiceLastLocation(@PathVariable Long orderId) {
+        return Result.ok(orderService.getOrderServiceLastLocation(orderId));
     }
 
 }

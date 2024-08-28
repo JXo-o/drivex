@@ -50,19 +50,19 @@ public class OrderInfoController {
     @Operation(summary = "乘客端查找当前订单")
     @GetMapping("/searchCustomerCurrentOrder/{customerId}")
     Result<CurrentOrderInfoVo> searchCustomerCurrentOrder(@PathVariable("customerId") Long customerId) {
-        return Result.ok();
+        return Result.ok(orderInfoService.searchCustomerCurrentOrder(customerId));
     }
 
     @Operation(summary = "司机端查找当前订单")
     @GetMapping("/searchDriverCurrentOrder/{driverId}")
     Result<CurrentOrderInfoVo> searchDriverCurrentOrder(@PathVariable("driverId") Long driverId) {
-        return Result.ok();
+        return Result.ok(orderInfoService.searchDriverCurrentOrder(driverId));
     }
 
     @Operation(summary = "根据订单id获取订单信息")
     @GetMapping("/getOrderInfo/{orderId}")
     Result<OrderInfo> getOrderInfo(@PathVariable("orderId") Long orderId) {
-        return Result.ok();
+        return Result.ok(orderInfoService.getById(orderId));
     }
 
     @Operation(summary = "司机到达起始点")
@@ -71,19 +71,19 @@ public class OrderInfoController {
             @PathVariable("orderId") Long orderId,
             @PathVariable("driverId") Long driverId
     ) {
-        return Result.ok();
+        return Result.ok(orderInfoService.driverArriveStartLocation(orderId, driverId));
     }
 
     @Operation(summary = "更新代驾车辆信息")
     @PostMapping("/updateOrderCart")
     Result<Boolean> updateOrderCart(@RequestBody UpdateOrderCartForm updateOrderCartForm) {
-        return Result.ok();
+        return Result.ok(orderInfoService.updateOrderCart(updateOrderCartForm));
     }
 
     @Operation(summary = "开始代驾服务")
     @PostMapping("/startDrive")
     Result<Boolean> startDrive(@RequestBody StartDriveForm startDriveForm) {
-        return Result.ok();
+        return Result.ok(orderInfoService.startDrive(startDriveForm));
     }
 
     @Operation(summary = "根据时间段获取订单数")

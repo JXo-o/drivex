@@ -1,6 +1,8 @@
 package com.jxh.drivex.order.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jxh.drivex.common.constant.RedisConstant;
 import com.jxh.drivex.common.execption.DrivexException;
@@ -9,6 +11,9 @@ import com.jxh.drivex.model.entity.order.OrderInfo;
 import com.jxh.drivex.model.entity.order.OrderStatusLog;
 import com.jxh.drivex.model.enums.OrderStatus;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
+import com.jxh.drivex.model.form.order.StartDriveForm;
+import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
+import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.order.mapper.OrderInfoMapper;
 import com.jxh.drivex.order.mapper.OrderStatusLogMapper;
 import com.jxh.drivex.order.service.OrderInfoService;
@@ -22,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 @Service
 public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo>
@@ -162,6 +168,119 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     }
 
     /**
+     * 乘客端查找当前订单。
+     * <p>
+     * 此方法根据乘客的 ID 查询当前订单信息。查询条件包括订单状态为已接单、司机已到达、更新代驾车辆信息、开始服务、结束服务和待付款的订单。
+     * 查询结果按订单 ID 降序排列，并限制只返回一条记录。
+     * </p>
+     *
+     * @param customerId 乘客的 ID
+     * @return 返回包含当前订单信息的 CurrentOrderInfoVo 对象。如果没有当前订单，则返回的对象中 isHasCurrentOrder 字段为 false。
+     */
+    @Override
+    public CurrentOrderInfoVo searchCustomerCurrentOrder(Long customerId) {
+        Integer[] statusArray = {
+                OrderStatus.ACCEPTED.getStatus(),
+                OrderStatus.DRIVER_ARRIVED.getStatus(),
+                OrderStatus.UPDATE_CART_INFO.getStatus(),
+                OrderStatus.START_SERVICE.getStatus(),
+                OrderStatus.END_SERVICE.getStatus(),
+                OrderStatus.UNPAID.getStatus()
+        };
+        return this.searchCurrentOrder(customerId, OrderInfo::getCustomerId, statusArray);
+    }
+
+    /**
+     * 司机端查找当前订单。
+     * <p>
+     * 此方法根据乘客的 ID 查询当前订单信息。查询条件包括订单状态为已接单、司机已到达、更新代驾车辆信息、开始服务、结束服务的订单。
+     * 查询结果按订单 ID 降序排列，并限制只返回一条记录。
+     * </p>
+     *
+     * @param driverId 司机的 ID
+     * @return 返回包含当前订单信息的 CurrentOrderInfoVo 对象。如果没有当前订单，则返回的对象中 isHasCurrentOrder 字段为 false。
+     */
+    @Override
+    public CurrentOrderInfoVo searchDriverCurrentOrder(Long driverId) {
+        Integer[] statusArray = {
+                OrderStatus.ACCEPTED.getStatus(),
+                OrderStatus.DRIVER_ARRIVED.getStatus(),
+                OrderStatus.UPDATE_CART_INFO.getStatus(),
+                OrderStatus.START_SERVICE.getStatus(),
+                OrderStatus.END_SERVICE.getStatus()
+        };
+        return this.searchCurrentOrder(driverId, OrderInfo::getDriverId, statusArray);
+    }
+
+    /**
+     * 司机到达起始点并更新订单信息。
+     *
+     * @param orderId 订单ID
+     * @param driverId 司机ID
+     * @return 更新订单是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean driverArriveStartLocation(Long orderId, Long driverId) {
+        LambdaUpdateWrapper<OrderInfo> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderInfo::getId, orderId)
+                .eq(OrderInfo::getDriverId, driverId)
+                .set(OrderInfo::getStatus, OrderStatus.DRIVER_ARRIVED.getStatus())
+                .set(OrderInfo::getArriveTime, new Date());
+        if(orderInfoMapper.update( updateWrapper) == 1) {
+            this.log(orderId, OrderStatus.DRIVER_ARRIVED.getStatus());
+        } else {
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
+    }
+
+    /**
+     * 更新代驾车辆信息。
+     *
+     * @param updateOrderCartForm 更新代驾车辆信息表单
+     * @return 更新是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateOrderCart(UpdateOrderCartForm updateOrderCartForm) {
+        LambdaQueryWrapper<OrderInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderInfo::getId, updateOrderCartForm.getOrderId());
+        queryWrapper.eq(OrderInfo::getDriverId, updateOrderCartForm.getDriverId());
+        OrderInfo updateOrderInfo = new OrderInfo();
+        BeanUtils.copyProperties(updateOrderCartForm, updateOrderInfo);
+        updateOrderInfo.setStatus(OrderStatus.UPDATE_CART_INFO.getStatus());
+        if(orderInfoMapper.update(updateOrderInfo, queryWrapper) == 1) {
+            this.log(updateOrderCartForm.getOrderId(), OrderStatus.UPDATE_CART_INFO.getStatus());
+        } else {
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
+    }
+
+    /**
+     * 司机开始代驾服务，并更新订单信息。
+     *
+     * @param startDriveForm 开始代驾服务表单
+     * @return 更新是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean startDrive(StartDriveForm startDriveForm) {
+        LambdaUpdateWrapper<OrderInfo> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderInfo::getId, startDriveForm.getOrderId())
+                .eq(OrderInfo::getDriverId, startDriveForm.getDriverId())
+                .set(OrderInfo::getStatus, OrderStatus.START_SERVICE.getStatus())
+                .set(OrderInfo::getStartServiceTime, new Date());
+        if(orderInfoMapper.update(updateWrapper) == 1) {
+            this.log(startDriveForm.getOrderId(), OrderStatus.START_SERVICE.getStatus());
+        } else {
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
+    }
+
+    /**
      * 记录订单状态日志。
      * <p>
      * 此方法用于记录订单状态变化的日志信息，包括订单ID、状态、操作时间等信息，并将其插入到订单状态日志表中。
@@ -176,5 +295,35 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         orderStatusLog.setOrderStatus(status);
         orderStatusLog.setOperateTime(new Date());
         orderStatusLogMapper.insert(orderStatusLog);
+    }
+
+    /**
+     * 根据 ID 查询当前订单。
+     * <p>
+     * 此方法根据传入的 ID 和 ID 获取函数查询当前订单信息。查询条件包括订单状态在指定的状态数组中的订单。
+     * 查询结果按订单 ID 降序排列，并限制只返回一条记录。
+     * </p>
+     *
+     * @param id 订单相关的 ID（如客户 ID 或司机 ID）
+     * @param idGetter 获取订单相关 ID 的函数（如 OrderInfo::getCustomerId 或 OrderInfo::getDriverId）
+     * @param statusArray 包含需要查询的订单状态的数组
+     * @return 返回包含当前订单信息的 CurrentOrderInfoVo 对象。如果没有找到符合条件的订单，则 isHasCurrentOrder 字段为 false。
+     */
+    private CurrentOrderInfoVo searchCurrentOrder(Long id, SFunction<OrderInfo, Long> idGetter, Integer[] statusArray) {
+        LambdaQueryWrapper<OrderInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(idGetter, id);
+        queryWrapper.in(OrderInfo::getStatus, (Object) statusArray);
+        queryWrapper.orderByDesc(OrderInfo::getId);
+        queryWrapper.last("limit 1");
+        OrderInfo orderInfo = orderInfoMapper.selectOne(queryWrapper);
+        CurrentOrderInfoVo currentOrderInfoVo = new CurrentOrderInfoVo();
+        if (orderInfo != null) {
+            currentOrderInfoVo.setStatus(orderInfo.getStatus());
+            currentOrderInfoVo.setOrderId(orderInfo.getId());
+            currentOrderInfoVo.setIsHasCurrentOrder(true);
+        } else {
+            currentOrderInfoVo.setIsHasCurrentOrder(false);
+        }
+        return currentOrderInfoVo;
     }
 }

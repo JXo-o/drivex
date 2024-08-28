@@ -85,7 +85,7 @@ public class DriverInfoController {
     @Operation(summary = "获取司机基本信息")
     @GetMapping("/getDriverInfo/{driverId}")
     Result<DriverInfoVo> getDriverInfo(@PathVariable("driverId") Long driverId) {
-        return Result.ok(new DriverInfoVo());
+        return Result.ok(driverInfoService.getDriverInfo(driverId));
     }
 
     @Operation(summary = "获取司机OpenId")

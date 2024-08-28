@@ -17,6 +17,7 @@ import com.jxh.drivex.model.entity.driver.*;
 import com.jxh.drivex.model.form.driver.DriverFaceModelForm;
 import com.jxh.drivex.model.form.driver.UpdateDriverAuthInfoForm;
 import com.jxh.drivex.model.vo.driver.DriverAuthInfoVo;
+import com.jxh.drivex.model.vo.driver.DriverInfoVo;
 import com.jxh.drivex.model.vo.driver.DriverLoginVo;
 import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.common.profile.ClientProfile;
@@ -292,6 +293,22 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         updateWrapper.eq(DriverSet::getDriverId, driverId).set(DriverSet::getServiceStatus, status);
         driverSetMapper.update(updateWrapper);
         return true;
+    }
+
+    /**
+     * 获取司机基本信息。
+     * @param driverId 司机ID
+     * @return 司机基本信息
+     */
+    @Override
+    public DriverInfoVo getDriverInfo(Long driverId) {
+        DriverInfo driverInfo = this.getById(driverId);
+        DriverInfoVo driverInfoVo = new DriverInfoVo();
+        BeanUtils.copyProperties(driverInfo, driverInfoVo);
+        Integer driverLicenseAge = new DateTime().getYear() -
+                new DateTime(driverInfo.getDriverLicenseIssueDate()).getYear() + 1;
+        driverInfoVo.setDriverLicenseAge(driverLicenseAge);
+        return driverInfoVo;
     }
 
     /**

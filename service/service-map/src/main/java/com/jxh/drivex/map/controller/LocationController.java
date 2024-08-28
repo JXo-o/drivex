@@ -50,25 +50,25 @@ public class LocationController {
     @Operation(summary = "司机赶往代驾起始点：更新订单地址到缓存")
     @PostMapping("/updateOrderLocationToCache")
     Result<Boolean> updateOrderLocationToCache(@RequestBody UpdateOrderLocationForm updateOrderLocationForm) {
-        return Result.ok();
+        return Result.ok(locationService.updateOrderLocationToCache(updateOrderLocationForm));
     }
 
     @Operation(summary = "司机赶往代驾起始点：获取订单经纬度位置")
     @GetMapping("/getCacheOrderLocation/{orderId}")
     Result<OrderLocationVo> getCacheOrderLocation(@PathVariable("orderId") Long orderId) {
-        return Result.ok();
+        return Result.ok(locationService.getCacheOrderLocation(orderId));
     }
 
     @Operation(summary = "开始代驾服务：保存代驾服务订单位置")
     @PostMapping("/saveOrderServiceLocation")
     Result<Boolean> saveOrderServiceLocation(@RequestBody List<OrderServiceLocationForm> orderLocationServiceFormList) {
-        return Result.ok();
+        return Result.ok(locationService.saveOrderServiceLocation(orderLocationServiceFormList));
     }
 
     @Operation(summary = "代驾服务：获取订单服务最后一个位置信息")
     @GetMapping("/getOrderServiceLastLocation/{orderId}")
     Result<OrderServiceLastLocationVo> getOrderServiceLastLocation(@PathVariable("orderId") Long orderId) {
-        return Result.ok();
+        return Result.ok(locationService.getOrderServiceLastLocation(orderId));
     }
 
     @Operation(summary = "代驾服务：计算订单实际里程")

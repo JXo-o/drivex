@@ -1,8 +1,13 @@
 package com.jxh.drivex.customer.service.impl;
 
+import com.jxh.drivex.common.execption.DrivexException;
+import com.jxh.drivex.common.result.ResultCodeEnum;
 import com.jxh.drivex.customer.service.OrderService;
 import com.jxh.drivex.dispatch.client.NewOrderFeignClient;
+import com.jxh.drivex.driver.client.DriverInfoFeignClient;
+import com.jxh.drivex.map.client.LocationFeignClient;
 import com.jxh.drivex.map.client.MapFeignClient;
+import com.jxh.drivex.model.entity.order.OrderInfo;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
@@ -10,7 +15,12 @@ import com.jxh.drivex.model.form.order.OrderInfoForm;
 import com.jxh.drivex.model.form.rules.FeeRuleRequestForm;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
 import com.jxh.drivex.model.vo.dispatch.NewOrderTaskVo;
+import com.jxh.drivex.model.vo.driver.DriverInfoVo;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
+import com.jxh.drivex.model.vo.map.OrderLocationVo;
+import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
+import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderInfoVo;
 import com.jxh.drivex.model.vo.rules.FeeRuleResponseVo;
 import com.jxh.drivex.order.client.OrderInfoFeignClient;
 import com.jxh.drivex.rules.client.FeeRuleFeignClient;
@@ -28,17 +38,23 @@ public class OrderServiceImpl implements OrderService {
     private final FeeRuleFeignClient feeRuleFeignClient;
     private final OrderInfoFeignClient orderInfoFeignClient;
     private final NewOrderFeignClient newOrderFeignClient;
+    private final DriverInfoFeignClient driverInfoFeignClient;
+    private final LocationFeignClient locationFeignClient;
 
     public OrderServiceImpl(
             MapFeignClient mapFeignClient,
             FeeRuleFeignClient feeRuleFeignClient,
             OrderInfoFeignClient orderInfoFeignClient,
-            NewOrderFeignClient newOrderFeignClient
+            NewOrderFeignClient newOrderFeignClient,
+            DriverInfoFeignClient driverInfoFeignClient,
+            LocationFeignClient locationFeignClient
     ) {
         this.mapFeignClient = mapFeignClient;
         this.feeRuleFeignClient = feeRuleFeignClient;
         this.orderInfoFeignClient = orderInfoFeignClient;
         this.newOrderFeignClient = newOrderFeignClient;
+        this.driverInfoFeignClient = driverInfoFeignClient;
+        this.locationFeignClient = locationFeignClient;
     }
 
     /**
@@ -120,6 +136,53 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Integer getOrderStatus(Long orderId) {
         return orderInfoFeignClient.getOrderStatus(orderId).getData();
+    }
+
+    @Override
+    public CurrentOrderInfoVo searchCustomerCurrentOrder(Long customerId) {
+        return orderInfoFeignClient.searchCustomerCurrentOrder(customerId).getData();
+    }
+
+    @Override
+    public OrderInfoVo getOrderInfo(Long orderId, Long customerId) {
+        OrderInfo orderInfo = orderInfoFeignClient.getOrderInfo(orderId).getData();
+        if (orderInfo.getCustomerId().longValue() != customerId.longValue()) {
+            throw new DrivexException(ResultCodeEnum.ORDER_ID_NOT_FOUND);
+        }
+        OrderInfoVo orderInfoVo = new OrderInfoVo();
+        orderInfoVo.setOrderId(orderId);
+        BeanUtils.copyProperties(orderInfo, orderInfoVo);
+        return orderInfoVo;
+    }
+
+    /**
+     * 根据订单id获取司机基本信息。
+     * @param orderId 订单id
+     * @param customerId 乘客id
+     * @return 返回司机基本信息
+     */
+    @Override
+    public DriverInfoVo getDriverInfo(Long orderId, Long customerId) {
+        OrderInfo orderInfo = orderInfoFeignClient.getOrderInfo(orderId).getData();
+        if (!orderInfo.getCustomerId().equals(customerId)) {
+            throw new DrivexException(ResultCodeEnum.ILLEGAL_REQUEST);
+        }
+        return driverInfoFeignClient.getDriverInfo(orderInfo.getDriverId()).getData();
+    }
+
+    @Override
+    public OrderLocationVo getCacheOrderLocation(Long orderId) {
+        return locationFeignClient.getCacheOrderLocation(orderId).getData();
+    }
+
+    @Override
+    public DrivingLineVo calculateDrivingLine(CalculateDrivingLineForm calculateDrivingLineForm) {
+        return mapFeignClient.calculateDrivingLine(calculateDrivingLineForm).getData();
+    }
+
+    @Override
+    public OrderServiceLastLocationVo getOrderServiceLastLocation(Long orderId) {
+        return locationFeignClient.getOrderServiceLastLocation(orderId).getData();
     }
 
     /**

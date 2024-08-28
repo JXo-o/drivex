@@ -6,9 +6,13 @@ import com.jxh.drivex.driver.client.DriverInfoFeignClient;
 import com.jxh.drivex.driver.service.LocationService;
 import com.jxh.drivex.map.client.LocationFeignClient;
 import com.jxh.drivex.model.entity.driver.DriverSet;
+import com.jxh.drivex.model.form.map.OrderServiceLocationForm;
 import com.jxh.drivex.model.form.map.UpdateDriverLocationForm;
+import com.jxh.drivex.model.form.map.UpdateOrderLocationForm;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -33,5 +37,15 @@ public class LocationServiceImpl implements LocationService {
         } else {
             throw new DrivexException(ResultCodeEnum.SERVICE_NOT_STARTED);
         }
+    }
+
+    @Override
+    public Boolean updateOrderLocationToCache(UpdateOrderLocationForm updateOrderLocationForm) {
+        return locationFeignClient.updateOrderLocationToCache(updateOrderLocationForm).getData();
+    }
+
+    @Override
+    public Boolean saveOrderServiceLocation(List<OrderServiceLocationForm> orderLocationServiceFormList) {
+        return locationFeignClient.saveOrderServiceLocation(orderLocationServiceFormList).getData();
     }
 }
