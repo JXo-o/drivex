@@ -1,6 +1,7 @@
 package com.jxh.drivex.driver.controller;
 
 import com.jxh.drivex.common.result.Result;
+import com.jxh.drivex.driver.service.CiService;
 import com.jxh.drivex.model.vo.order.TextAuditingVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,10 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value="/ci")
 public class CiController {
 
+    private final CiService ciService;
+
+    public CiController(CiService ciService) {
+        this.ciService = ciService;
+    }
+
     @Operation(summary = "文本审核")
     @PostMapping("/textAuditing")
     Result<TextAuditingVo> textAuditing(@RequestBody String content){
-        return Result.ok(new TextAuditingVo());
+        return Result.ok(ciService.textAuditing(content));
     }
 
 }

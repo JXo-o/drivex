@@ -2,6 +2,9 @@ package com.jxh.drivex.driver.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.jxh.drivex.common.config.tencent.TencentCloudProperties;
+import com.jxh.drivex.common.execption.DrivexException;
+import com.jxh.drivex.common.result.ResultCodeEnum;
+import com.jxh.drivex.driver.service.CiService;
 import com.jxh.drivex.driver.service.CosService;
 import com.jxh.drivex.model.vo.driver.CosUploadVo;
 import com.qcloud.cos.COSClient;
@@ -26,13 +29,16 @@ public class CosServiceImpl implements CosService {
 
     private final TencentCloudProperties tencentCloudProperties;
     private final COSClient cosClient;
+    private final CiService ciService;
 
     public CosServiceImpl(
             TencentCloudProperties tencentCloudProperties,
-            COSClient cosClient
+            COSClient cosClient,
+            CiService ciService
     ) {
         this.tencentCloudProperties = tencentCloudProperties;
         this.cosClient = cosClient;
+        this.ciService = ciService;
     }
 
     /**
@@ -42,6 +48,7 @@ public class CosServiceImpl implements CosService {
      *      <li>生成唯一的文件路径和名称，并创建 `PutObjectRequest` 请求对象。</li>
      *      <li>使用 COS 客户端执行文件上传，并记录上传结果的日志。</li>
      *      <li>创建 `CosUploadVo` 对象，设置文件的存储路径和访问 URL。</li>
+     *      <li>使用腾讯云服务对图片进行审核。</li>
      *      <li>返回包含上传文件信息的 `CosUploadVo` 对象。</li>
      * </ol>
      *
@@ -72,6 +79,12 @@ public class CosServiceImpl implements CosService {
         PutObjectResult putObjectResult = cosClient.putObject(putObjectRequest);
         log.info(JSON.toJSONString(putObjectResult));
         // cosClient.shutdown();
+
+        Boolean isAuditing = ciService.imageAuditing(uploadPath);
+        if(!isAuditing) {
+            cosClient.deleteObject(tencentCloudProperties.getBucketPrivate(), uploadPath);
+            throw new DrivexException(ResultCodeEnum.IMAGE_AUDITING_ERROR);
+        }
 
         CosUploadVo cosUploadVo = new CosUploadVo();
         cosUploadVo.setUrl(uploadPath);

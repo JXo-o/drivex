@@ -7,16 +7,19 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jxh.drivex.common.constant.RedisConstant;
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
-import com.jxh.drivex.model.entity.order.OrderInfo;
-import com.jxh.drivex.model.entity.order.OrderStatusLog;
+import com.jxh.drivex.model.entity.order.*;
 import com.jxh.drivex.model.enums.OrderStatus;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
+import com.jxh.drivex.model.form.order.UpdateOrderBillForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
+import com.jxh.drivex.order.mapper.OrderBillMapper;
 import com.jxh.drivex.order.mapper.OrderInfoMapper;
+import com.jxh.drivex.order.mapper.OrderProfitsharingMapper;
 import com.jxh.drivex.order.mapper.OrderStatusLogMapper;
 import com.jxh.drivex.order.service.OrderInfoService;
+import com.jxh.drivex.order.service.OrderMonitorService;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
@@ -37,17 +40,26 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     private final OrderStatusLogMapper orderStatusLogMapper;
     private final OrderInfoMapper orderInfoMapper;
     private final RedissonClient redissonClient;
+    private final OrderMonitorService orderMonitorService;
+    private final OrderBillMapper orderBillMapper;
+    private final OrderProfitsharingMapper orderProfitsharingMapper;
 
     public OrderInfoServiceImpl(
             RedisTemplate<String, String> redisTemplate,
             OrderStatusLogMapper orderStatusLogMapper,
             OrderInfoMapper orderInfoMapper,
-            RedissonClient redissonClient
+            RedissonClient redissonClient,
+            OrderMonitorService orderMonitorService,
+            OrderBillMapper orderBillMapper,
+            OrderProfitsharingMapper orderProfitsharingMapper
     ) {
         this.redisTemplate = redisTemplate;
         this.orderStatusLogMapper = orderStatusLogMapper;
         this.orderInfoMapper = orderInfoMapper;
         this.redissonClient = redissonClient;
+        this.orderMonitorService = orderMonitorService;
+        this.orderBillMapper = orderBillMapper;
+        this.orderProfitsharingMapper = orderProfitsharingMapper;
     }
 
     /**
@@ -274,6 +286,67 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
                 .set(OrderInfo::getStartServiceTime, new Date());
         if(orderInfoMapper.update(updateWrapper) == 1) {
             this.log(startDriveForm.getOrderId(), OrderStatus.START_SERVICE.getStatus());
+        } else {
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        OrderMonitor orderMonitor = new OrderMonitor();
+        orderMonitor.setOrderId(startDriveForm.getOrderId());
+        orderMonitorService.saveOrderMonitor(orderMonitor);
+        return true;
+    }
+
+    /**
+     * 根据时间段获取订单数。
+     *
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 订单数
+     */
+    @Override
+    public Long getOrderNumByTime(String startTime, String endTime) {
+        LambdaQueryWrapper<OrderInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.ge(OrderInfo::getStartServiceTime, startTime);
+        queryWrapper.lt(OrderInfo::getStartServiceTime, endTime);
+        return orderInfoMapper.selectCount(queryWrapper);
+    }
+
+    /**
+     * 结束代驾服务并更新订单账单。
+     * <p>
+     * 此方法根据传入的更新订单账单表单对象更新订单信息，并将订单状态改为已结束服务。
+     * 如果更新订单信息成功，则将订单账单信息插入到订单账单表中，并将订单分账信息插入到订单分账表中。
+     * 如果更新订单信息失败，则抛出 {@code DrivexException} 异常。
+     * </p>
+     *
+     * @param updateOrderBillForm 更新订单账单表单对象
+     * @return 更新是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean endDrive(UpdateOrderBillForm updateOrderBillForm) {
+        LambdaUpdateWrapper<OrderInfo> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderInfo::getId, updateOrderBillForm.getOrderId())
+                .eq(OrderInfo::getDriverId, updateOrderBillForm.getDriverId())
+                .set(OrderInfo::getStatus, OrderStatus.END_SERVICE.getStatus())
+                .set(OrderInfo::getRealAmount, updateOrderBillForm.getTotalAmount())
+                .set(OrderInfo::getFavourFee, updateOrderBillForm.getFavourFee())
+                .set(OrderInfo::getEndServiceTime, new Date())
+                .set(OrderInfo::getRealDistance, updateOrderBillForm.getRealDistance());
+
+        if(orderInfoMapper.update(updateWrapper) == 1) {
+            this.log(updateOrderBillForm.getOrderId(), OrderStatus.END_SERVICE.getStatus());
+            OrderBill orderBill = new OrderBill();
+            BeanUtils.copyProperties(updateOrderBillForm, orderBill);
+            orderBill.setOrderId(updateOrderBillForm.getOrderId());
+            orderBill.setPayAmount(orderBill.getTotalAmount());
+            orderBillMapper.insert(orderBill);
+
+            OrderProfitsharing orderProfitsharing = new OrderProfitsharing();
+            BeanUtils.copyProperties(updateOrderBillForm, orderProfitsharing);
+            orderProfitsharing.setOrderId(updateOrderBillForm.getOrderId());
+            orderProfitsharing.setRuleId(updateOrderBillForm.getProfitsharingRuleId());
+            orderProfitsharing.setStatus(1);
+            orderProfitsharingMapper.insert(orderProfitsharing);
         } else {
             throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
         }

@@ -1,0 +1,37 @@
+package  com.jxh.drivex.rules;
+
+import com.jxh.drivex.model.form.rules.RewardRuleRequest;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+global com.jxh.drivex.model.vo.rules.RewardRuleResponse rewardRuleResponse;
+
+rule "完成5单后 每单奖励2元"
+    salience 10
+    no-loop true
+    when
+        $rule:RewardRuleRequest(orderNum >= 5 && orderNum < 10)
+    then
+        rewardRuleResponse.setRewardAmount(new BigDecimal("2.0"));
+        System.out.println("完成10单后 奖励：" + rewardRuleResponse.getRewardAmount() + "元");
+end
+
+rule "完成10单后 每单奖励5元"
+    salience 9
+    no-loop true
+    when
+        $rule:RewardRuleRequest(orderNum >= 10 && orderNum < 20)
+    then
+        rewardRuleResponse.setRewardAmount(new BigDecimal("5.0"));
+        System.out.println("完成10单后 奖励：" + rewardRuleResponse.getRewardAmount() + "元");
+end
+
+rule "完成20单后 每单奖励10元"
+    salience 8
+    no-loop true
+    when
+        $rule:RewardRuleRequest(orderNum >= 20)
+    then
+        rewardRuleResponse.setRewardAmount(new BigDecimal("10.0"));
+        System.out.println("完成20单后 奖励：" + rewardRuleResponse.getRewardAmount() + "元");
+end

@@ -3,6 +3,7 @@ package com.jxh.drivex.map.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.jxh.drivex.common.constant.RedisConstant;
 import com.jxh.drivex.common.constant.SystemConstant;
+import com.jxh.drivex.common.util.LocationUtil;
 import com.jxh.drivex.driver.client.DriverInfoFeignClient;
 import com.jxh.drivex.map.repository.OrderServiceLocationRepository;
 import com.jxh.drivex.map.service.LocationService;
@@ -26,6 +27,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -209,6 +211,33 @@ public class LocationServiceImpl implements LocationService {
         OrderServiceLastLocationVo orderServiceLastLocationVo = new OrderServiceLastLocationVo();
         BeanUtils.copyProperties(Objects.requireNonNull(orderServiceLocation), orderServiceLastLocationVo);
         return orderServiceLastLocationVo;
+    }
+
+    /**
+     * 计算订单实际里程。
+     *
+     * @param orderId 订单ID
+     * @return 订单实际里程
+     */
+    @Override
+    public BigDecimal calculateOrderRealDistance(Long orderId) {
+        List<OrderServiceLocation> orderServiceLocationList =
+                orderServiceLocationRepository.findByOrderIdOrderByCreateTimeAsc(orderId);
+        double realDistance = 0;
+        if(!CollectionUtils.isEmpty(orderServiceLocationList)) {
+            for (int i = 0, size=orderServiceLocationList.size()-1; i < size; i++) {
+                OrderServiceLocation location1 = orderServiceLocationList.get(i);
+                OrderServiceLocation location2 = orderServiceLocationList.get(i+1);
+                double distance = LocationUtil.getDistance(
+                        location1.getLatitude().doubleValue(),
+                        location1.getLongitude().doubleValue(),
+                        location2.getLatitude().doubleValue(),
+                        location2.getLongitude().doubleValue()
+                );
+                realDistance += distance;
+            }
+        }
+        return new BigDecimal(realDistance);
     }
 
     /**

@@ -5,6 +5,7 @@ import com.jxh.drivex.common.result.Result;
 import com.jxh.drivex.common.util.AuthContextHolder;
 import com.jxh.drivex.driver.service.OrderService;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
+import com.jxh.drivex.model.form.order.OrderFeeForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
@@ -98,6 +99,15 @@ public class OrderController {
     public Result<Boolean> startDrive(@RequestBody StartDriveForm startDriveForm) {
         startDriveForm.setDriverId(AuthContextHolder.getUserId());
         return Result.ok(orderService.startDrive(startDriveForm));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "结束代驾服务更新订单账单")
+    @PostMapping("/endDrive")
+    public Result<Boolean> endDrive(@RequestBody OrderFeeForm orderFeeForm) {
+        Long driverId = AuthContextHolder.getUserId();
+        orderFeeForm.setDriverId(driverId);
+        return Result.ok(orderService.endDrive(orderFeeForm));
     }
 
 }

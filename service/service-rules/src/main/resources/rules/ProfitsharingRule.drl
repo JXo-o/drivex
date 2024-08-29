@@ -1,0 +1,100 @@
+package  com.jxh.drivex.rules;
+
+import com.jxh.drivex.model.form.rules.ProfitsharingRuleRequest;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+global com.jxh.drivex.model.vo.rules.ProfitsharingRuleResponse profitsharingRuleResponse;
+
+rule "支付微信平台费用 平台费率：0.6%"
+    salience 10
+    no-loop true
+    when
+        $rule:ProfitsharingRuleRequest()
+    then
+        profitsharingRuleResponse.setOrderAmount($rule.getOrderAmount());
+        profitsharingRuleResponse.setPaymentRate(new BigDecimal("0.006"));
+        BigDecimal paymentFee = profitsharingRuleResponse.getOrderAmount().multiply(profitsharingRuleResponse.getPaymentRate()).setScale(2, RoundingMode.HALF_UP);
+        profitsharingRuleResponse.setPaymentFee(paymentFee);
+        System.out.println("支付微信平台费用：" + profitsharingRuleResponse.getPaymentFee() + "元");
+end
+
+rule "订单金额小于等于100 当天完成订单小于等于10单"
+    salience 9
+    no-loop true
+    when
+        $rule:ProfitsharingRuleRequest(orderAmount <= 100.0 && orderNum <= 10)
+    then
+        BigDecimal totalAmount = profitsharingRuleResponse.getOrderAmount()
+                .subtract(profitsharingRuleResponse.getPaymentFee());
+        BigDecimal platformIncome = totalAmount.multiply(new BigDecimal("0.2")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverTotalIncome = totalAmount.subtract(platformIncome);
+        BigDecimal driverTaxFee = driverTotalIncome.multiply(new BigDecimal("0.1")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverIncome = driverTotalIncome.subtract(driverTaxFee);
+        profitsharingRuleResponse.setPlatformIncome(platformIncome);
+        profitsharingRuleResponse.setDriverIncome(driverIncome);
+        profitsharingRuleResponse.setDriverTaxRate(new BigDecimal("0.1"));
+        profitsharingRuleResponse.setDriverTaxFee(driverTaxFee);
+        System.out.println("平台分账收入：" + platformIncome + "元" + "，司机分账收入：" +
+                driverIncome + "元" + "，司机个税：" + driverTaxFee + "元");
+end
+
+rule "订单金额小于等于100 天完成订单大于10单"
+    salience 8
+    no-loop true
+    when
+        $rule:ProfitsharingRuleRequest(orderAmount <= 100.0 && orderNum > 10)
+    then
+        BigDecimal totalAmount = profitsharingRuleResponse.getOrderAmount()
+                .subtract(profitsharingRuleResponse.getPaymentFee());
+        BigDecimal platformIncome = totalAmount.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverTotalIncome = totalAmount.subtract(platformIncome);
+        BigDecimal driverTaxFee = driverTotalIncome.multiply(new BigDecimal("0.1")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverIncome = driverTotalIncome.subtract(driverTaxFee);
+        profitsharingRuleResponse.setPlatformIncome(platformIncome);
+        profitsharingRuleResponse.setDriverIncome(driverIncome);
+        profitsharingRuleResponse.setDriverTaxRate(new BigDecimal("0.1"));
+        profitsharingRuleResponse.setDriverTaxFee(driverTaxFee);
+        System.out.println("平台分账收入：" + platformIncome + "元" + "，司机分账收入：" +
+                driverIncome + "元" + "，司机个税：" + driverTaxFee + "元");
+end
+
+rule "订单金额大于100 当天完成订单小于等于10单"
+    salience 7
+    no-loop true
+    when
+        $rule:ProfitsharingRuleRequest(orderAmount > 100.0 && orderNum <= 10)
+    then
+        BigDecimal totalAmount = profitsharingRuleResponse.getOrderAmount()
+                .subtract(profitsharingRuleResponse.getPaymentFee());
+        BigDecimal platformIncome = totalAmount.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverTotalIncome = totalAmount.subtract(platformIncome);
+        BigDecimal driverTaxFee = driverTotalIncome.multiply(new BigDecimal("0.1")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverIncome = driverTotalIncome.subtract(driverTaxFee);
+        profitsharingRuleResponse.setPlatformIncome(platformIncome);
+        profitsharingRuleResponse.setDriverIncome(driverIncome);
+        profitsharingRuleResponse.setDriverTaxRate(new BigDecimal("0.1"));
+        profitsharingRuleResponse.setDriverTaxFee(driverTaxFee);
+        System.out.println("平台分账收入：" + platformIncome + "元" + "，司机分账收入：" +
+                driverIncome + "元" + "，司机个税：" + driverTaxFee + "元");
+end
+
+rule "订单金额大于100 天完成订单大于10单"
+    salience 6
+    no-loop true
+    when
+        $rule:ProfitsharingRuleRequest(orderAmount > 100.0 && orderNum > 10)
+    then
+        BigDecimal totalAmount = profitsharingRuleResponse.getOrderAmount()
+                .subtract(profitsharingRuleResponse.getPaymentFee());
+        BigDecimal platformIncome = totalAmount.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverTotalIncome = totalAmount.subtract(platformIncome);
+        BigDecimal driverTaxFee = driverTotalIncome.multiply(new BigDecimal("0.1")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal driverIncome = driverTotalIncome.subtract(driverTaxFee);
+        profitsharingRuleResponse.setPlatformIncome(platformIncome);
+        profitsharingRuleResponse.setDriverIncome(driverIncome);
+        profitsharingRuleResponse.setDriverTaxRate(new BigDecimal("0.1"));
+        profitsharingRuleResponse.setDriverTaxFee(driverTaxFee);
+        System.out.println("平台分账收入：" + platformIncome + "元" + "，司机分账收入：" +
+                driverIncome + "元" + "，司机个税：" + driverTaxFee + "元");
+end

@@ -74,7 +74,7 @@ public class LocationController {
     @Operation(summary = "代驾服务：计算订单实际里程")
     @GetMapping("/calculateOrderRealDistance/{orderId}")
     Result<BigDecimal> calculateOrderRealDistance(@PathVariable("orderId") Long orderId) {
-        return Result.ok();
+        return Result.ok(locationService.calculateOrderRealDistance(orderId));
     }
 
 }

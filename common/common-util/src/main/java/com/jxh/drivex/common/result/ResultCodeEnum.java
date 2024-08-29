@@ -34,6 +34,7 @@ public enum ResultCodeEnum {
     ACCOUNT_DISABLED(403, "账号已停用"),
 
     ORDER_ID_NOT_FOUND(404, "订单id未找到"),
+    IMAGE_AUDITING_ERROR(404, "图片违规"),
     NOT_FOUND(404, "资源未找到"),
     ACCOUNT_ERROR(404, "账号错误"),
     ACCOUNT_NOT_FOUND(404, "账号未找到"),

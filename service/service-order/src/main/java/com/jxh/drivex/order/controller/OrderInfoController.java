@@ -92,13 +92,13 @@ public class OrderInfoController {
             @PathVariable("startTime") String startTime,
             @PathVariable("endTime") String endTime
     ) {
-        return Result.ok();
+        return Result.ok(orderInfoService.getOrderNumByTime(startTime, endTime));
     }
 
     @Operation(summary = "结束代驾服务更新订单账单")
     @PostMapping("/endDrive")
     Result<Boolean> endDrive(@RequestBody UpdateOrderBillForm updateOrderBillForm) {
-        return Result.ok();
+        return Result.ok(orderInfoService.endDrive(updateOrderBillForm));
     }
 
     @Operation(summary = "获取乘客订单分页列表")

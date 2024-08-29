@@ -58,6 +58,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!--mysql-->
         <dependency>
             <groupId>com.mysql</groupId>

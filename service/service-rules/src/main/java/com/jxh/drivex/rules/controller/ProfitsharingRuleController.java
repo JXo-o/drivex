@@ -3,6 +3,7 @@ package com.jxh.drivex.rules.controller;
 import com.jxh.drivex.common.result.Result;
 import com.jxh.drivex.model.form.rules.ProfitsharingRuleRequestForm;
 import com.jxh.drivex.model.vo.rules.ProfitsharingRuleResponseVo;
+import com.jxh.drivex.rules.service.ProfitsharingRuleService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,12 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/rules/profitsharing")
 public class ProfitsharingRuleController {
 
+    private final ProfitsharingRuleService profitsharingRuleService;
+
+    public ProfitsharingRuleController(ProfitsharingRuleService profitsharingRuleService) {
+        this.profitsharingRuleService = profitsharingRuleService;
+    }
+
     @Operation(summary = "计算订单分账数据")
     @PostMapping("/calculateOrderProfitsharingFee")
     Result<ProfitsharingRuleResponseVo> calculateOrderProfitsharingFee(
             @RequestBody ProfitsharingRuleRequestForm profitsharingRuleRequestForm
     ) {
-        return Result.ok();
+        return Result.ok(profitsharingRuleService.calculateOrderProfitsharingFee(profitsharingRuleRequestForm));
     }
 
 }

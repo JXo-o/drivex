@@ -1,6 +1,7 @@
 package com.jxh.drivex.driver.service;
 
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
+import com.jxh.drivex.model.form.order.OrderFeeForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
@@ -29,4 +30,6 @@ public interface OrderService {
     Boolean updateOrderCart(UpdateOrderCartForm updateOrderCartForm);
 
     Boolean startDrive(StartDriveForm startDriveForm);
+
+    Boolean endDrive(OrderFeeForm orderFeeForm);
 }
