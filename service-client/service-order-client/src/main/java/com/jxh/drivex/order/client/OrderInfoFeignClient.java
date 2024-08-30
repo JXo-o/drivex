@@ -98,7 +98,7 @@ public interface OrderInfoFeignClient {
      * 获取乘客订单分页列表
      */
     @GetMapping("/order/info/findCustomerOrderPage/{customerId}/{page}/{limit}")
-    Result<PageVo<OrderInfo>> findCustomerOrderPage(
+    Result<PageVo<OrderListVo>> findCustomerOrderPage(
             @PathVariable("customerId") Long customerId,
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit
@@ -108,7 +108,7 @@ public interface OrderInfoFeignClient {
      * 获取司机订单分页列表
      */
     @GetMapping("/order/info/findDriverOrderPage/{driverId}/{page}/{limit}")
-    Result<PageVo<OrderInfo>> findDriverOrderPage(
+    Result<PageVo<OrderListVo>> findDriverOrderPage(
             @PathVariable("driverId") Long driverId,
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit

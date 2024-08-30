@@ -8,11 +8,14 @@ import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
 import com.jxh.drivex.model.form.order.OrderFeeForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
+import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.model.vo.order.NewOrderDataVo;
 import com.jxh.drivex.model.vo.order.OrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderListVo;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -108,6 +111,19 @@ public class OrderController {
         Long driverId = AuthContextHolder.getUserId();
         orderFeeForm.setDriverId(driverId);
         return Result.ok(orderService.endDrive(orderFeeForm));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "获取司机订单分页列表")
+    @GetMapping("findDriverOrderPage/{page}/{limit}")
+    public Result<PageVo<OrderListVo>> findDriverOrderPage(
+            @Parameter(name = "page", description = "当前页码", required = true)
+            @PathVariable Long page,
+            @Parameter(name = "limit", description = "每页记录数", required = true)
+            @PathVariable Long limit) {
+        Long driverId = AuthContextHolder.getUserId();
+        PageVo<OrderListVo> pageVo = orderService.findDriverOrderPage(driverId, page, limit);
+        return Result.ok(pageVo);
     }
 
 }

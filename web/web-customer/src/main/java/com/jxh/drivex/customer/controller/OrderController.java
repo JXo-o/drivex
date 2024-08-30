@@ -7,6 +7,7 @@ import com.jxh.drivex.customer.service.OrderService;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
+import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
 import com.jxh.drivex.model.vo.driver.DriverInfoVo;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
@@ -14,7 +15,9 @@ import com.jxh.drivex.model.vo.map.OrderLocationVo;
 import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderListVo;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -96,6 +99,19 @@ public class OrderController {
     @GetMapping("/getOrderServiceLastLocation/{orderId}")
     public Result<OrderServiceLastLocationVo> getOrderServiceLastLocation(@PathVariable Long orderId) {
         return Result.ok(orderService.getOrderServiceLastLocation(orderId));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "获取乘客订单分页列表")
+    @GetMapping("findCustomerOrderPage/{page}/{limit}")
+    public Result<PageVo<OrderListVo>> findCustomerOrderPage(
+            @Parameter(name = "page", description = "当前页码", required = true)
+            @PathVariable Long page,
+            @Parameter(name = "limit", description = "每页记录数", required = true)
+            @PathVariable Long limit) {
+        Long customerId = AuthContextHolder.getUserId();
+        PageVo<OrderListVo> pageVo = orderService.findCustomerOrderPage(customerId, page, limit);
+        return Result.ok(pageVo);
     }
 
 }

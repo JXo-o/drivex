@@ -3,17 +3,23 @@ package com.jxh.drivex.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.jxh.drivex.common.constant.MqConst;
 import com.jxh.drivex.common.constant.RedisConstant;
+import com.jxh.drivex.common.constant.SystemConstant;
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
+import com.jxh.drivex.common.service.RabbitService;
 import com.jxh.drivex.model.entity.order.*;
 import com.jxh.drivex.model.enums.OrderStatus;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderBillForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
+import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderListVo;
 import com.jxh.drivex.order.mapper.OrderBillMapper;
 import com.jxh.drivex.order.mapper.OrderInfoMapper;
 import com.jxh.drivex.order.mapper.OrderProfitsharingMapper;
@@ -43,6 +49,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     private final OrderMonitorService orderMonitorService;
     private final OrderBillMapper orderBillMapper;
     private final OrderProfitsharingMapper orderProfitsharingMapper;
+    private final RabbitService rabbitService;
 
     public OrderInfoServiceImpl(
             RedisTemplate<String, String> redisTemplate,
@@ -51,7 +58,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             RedissonClient redissonClient,
             OrderMonitorService orderMonitorService,
             OrderBillMapper orderBillMapper,
-            OrderProfitsharingMapper orderProfitsharingMapper
+            OrderProfitsharingMapper orderProfitsharingMapper,
+            RabbitService rabbitService
     ) {
         this.redisTemplate = redisTemplate;
         this.orderStatusLogMapper = orderStatusLogMapper;
@@ -60,6 +68,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         this.orderMonitorService = orderMonitorService;
         this.orderBillMapper = orderBillMapper;
         this.orderProfitsharingMapper = orderProfitsharingMapper;
+        this.rabbitService = rabbitService;
     }
 
     /**
@@ -67,7 +76,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
      * <p>
      * 此方法根据传入的订单信息表单对象创建一个新的订单记录，并设置订单状态为等待接单。
      * 生成唯一的订单号，并在数据库中保存订单信息。此外，还会在 Redis 中存储订单接单标记，
-     * 并且会记录订单状态日志。
+     * 并且会记录订单状态日志。最后，会发送延迟消息，用于取消订单。
      * </p>
      *
      * @param orderInfoForm 包含订单详细信息的表单对象
@@ -89,7 +98,12 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
                 RedisConstant.ORDER_ACCEPT_MARK_EXPIRES_TIME,
                 TimeUnit.MINUTES
         );
-        // TODO: 生成订单之后，发送延迟消息
+        rabbitService.sendDelayMessage(
+                MqConst.EXCHANGE_CANCEL_ORDER,
+                MqConst.ROUTING_CANCEL_ORDER,
+                String.valueOf(orderInfo.getId()),
+                SystemConstant.CANCEL_ORDER_DELAY_TIME
+        );
         return orderInfo.getId();
     }
 
@@ -351,6 +365,53 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
         }
         return true;
+    }
+
+    /**
+     * 系统取消订单。
+     *
+     * @param orderId 订单ID
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void systemCancelOrder(long orderId) {
+        Integer orderStatus = this.getOrderStatus(orderId);
+        if(orderStatus != null && orderStatus.equals(OrderStatus.WAITING_ACCEPT.getStatus())) {
+            OrderInfo orderInfo = new OrderInfo();
+            orderInfo.setId(orderId);
+            if(orderInfoMapper.updateById(orderInfo) == 1) {
+                this.log(orderInfo.getId(), orderInfo.getStatus());
+                redisTemplate.delete(RedisConstant.ORDER_ACCEPT_MARK + orderId);
+            } else {
+                throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+            }
+        }
+    }
+
+    /**
+     * 分页查询乘客订单列表。
+     *
+     * @param pageParam 分页参数
+     * @param customerId 乘客ID
+     * @return 订单列表
+     */
+    @Override
+    public PageVo<OrderListVo> findCustomerOrderPage(Page<OrderInfo> pageParam, Long customerId) {
+        Page<OrderListVo> pageInfo = orderInfoMapper.selectCustomerOrderPage(pageParam, customerId);
+        return new PageVo<>(pageInfo.getRecords(), pageInfo.getPages(), pageInfo.getTotal());
+    }
+
+    /**
+     * 分页查询司机订单列表。
+     *
+     * @param pageParam 分页参数
+     * @param driverId 司机ID
+     * @return 订单列表
+     */
+    @Override
+    public PageVo<OrderListVo> findDriverOrderPage(Page<OrderInfo> pageParam, Long driverId) {
+        Page<OrderListVo> pageInfo = orderInfoMapper.selectDriverOrderPage(pageParam, driverId);
+        return new PageVo<>(pageInfo.getRecords(), pageInfo.getPages(), pageInfo.getTotal());
     }
 
     /**

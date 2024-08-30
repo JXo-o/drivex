@@ -18,4 +18,9 @@ public class DrivexCorrelationData extends CorrelationData {
     private boolean isDelay = false;
     //延迟时长
     private int delayTime = 10;
+
+    public void retryCountAdd() {
+        this.retryCount++;
+    }
+
 }

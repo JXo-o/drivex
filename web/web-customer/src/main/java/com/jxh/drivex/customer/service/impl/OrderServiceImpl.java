@@ -13,6 +13,7 @@ import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
 import com.jxh.drivex.model.form.rules.FeeRuleRequestForm;
+import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
 import com.jxh.drivex.model.vo.dispatch.NewOrderTaskVo;
 import com.jxh.drivex.model.vo.driver.DriverInfoVo;
@@ -21,6 +22,7 @@ import com.jxh.drivex.model.vo.map.OrderLocationVo;
 import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderListVo;
 import com.jxh.drivex.model.vo.rules.FeeRuleResponseVo;
 import com.jxh.drivex.order.client.OrderInfoFeignClient;
 import com.jxh.drivex.rules.client.FeeRuleFeignClient;
@@ -183,6 +185,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderServiceLastLocationVo getOrderServiceLastLocation(Long orderId) {
         return locationFeignClient.getOrderServiceLastLocation(orderId).getData();
+    }
+
+    @Override
+    public PageVo<OrderListVo> findCustomerOrderPage(Long customerId, Long page, Long limit) {
+        return orderInfoFeignClient.findCustomerOrderPage(customerId, page, limit).getData();
     }
 
     /**

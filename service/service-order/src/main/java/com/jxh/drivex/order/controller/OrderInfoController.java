@@ -1,5 +1,6 @@
 package com.jxh.drivex.order.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jxh.drivex.common.result.Result;
 import com.jxh.drivex.model.entity.order.OrderInfo;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
@@ -103,22 +104,30 @@ public class OrderInfoController {
 
     @Operation(summary = "获取乘客订单分页列表")
     @GetMapping("/findCustomerOrderPage/{customerId}/{page}/{limit}")
-    Result<PageVo<OrderInfo>> findCustomerOrderPage(
+    Result<PageVo<OrderListVo>> findCustomerOrderPage(
             @PathVariable("customerId") Long customerId,
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit
     ) {
-        return Result.ok();
+        Page<OrderInfo> pageParam = new Page<>(page, limit);
+        PageVo<OrderListVo> pageVo = orderInfoService.findCustomerOrderPage(pageParam, customerId);
+        pageVo.setPage(page);
+        pageVo.setLimit(limit);
+        return Result.ok(pageVo);
     }
 
     @Operation(summary = "获取司机订单分页列表")
     @GetMapping("/findDriverOrderPage/{driverId}/{page}/{limit}")
-    Result<PageVo<OrderInfo>> findDriverOrderPage(
+    Result<PageVo<OrderListVo>> findDriverOrderPage(
             @PathVariable("driverId") Long driverId,
             @PathVariable("page") Long page,
             @PathVariable("limit") Long limit
     ) {
-        return Result.ok();
+        Page<OrderInfo> pageParam = new Page<>(page, limit);
+        PageVo<OrderListVo> pageVo = orderInfoService.findDriverOrderPage(pageParam, driverId);
+        pageVo.setPage(page);
+        pageVo.setLimit(limit);
+        return Result.ok(pageVo);
     }
 
     @Operation(summary = "根据订单id获取实际账单信息")

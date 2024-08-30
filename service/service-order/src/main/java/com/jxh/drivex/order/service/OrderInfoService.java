@@ -1,12 +1,15 @@
 package com.jxh.drivex.order.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.jxh.drivex.model.entity.order.OrderInfo;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderBillForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
+import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderListVo;
 
 public interface OrderInfoService extends IService<OrderInfo> {
 
@@ -29,4 +32,10 @@ public interface OrderInfoService extends IService<OrderInfo> {
     Long getOrderNumByTime(String startTime, String endTime);
 
     Boolean endDrive(UpdateOrderBillForm updateOrderBillForm);
+
+    void systemCancelOrder(long orderId);
+
+    PageVo<OrderListVo> findCustomerOrderPage(Page<OrderInfo> pageParam, Long customerId);
+
+    PageVo<OrderListVo> findDriverOrderPage(Page<OrderInfo> pageParam, Long driverId);
 }

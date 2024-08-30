@@ -4,10 +4,12 @@ import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
 import com.jxh.drivex.model.form.order.OrderFeeForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
+import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.model.vo.order.NewOrderDataVo;
 import com.jxh.drivex.model.vo.order.OrderInfoVo;
+import com.jxh.drivex.model.vo.order.OrderListVo;
 
 import java.util.List;
 
@@ -32,4 +34,6 @@ public interface OrderService {
     Boolean startDrive(StartDriveForm startDriveForm);
 
     Boolean endDrive(OrderFeeForm orderFeeForm);
+
+    PageVo<OrderListVo> findDriverOrderPage(Long driverId, Long page, Long limit);
 }
