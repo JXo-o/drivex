@@ -126,5 +126,13 @@ public class OrderController {
         return Result.ok(pageVo);
     }
 
+    @DrivexLogin
+    @Operation(summary = "司机发送账单信息")
+    @GetMapping("/sendOrderBillInfo/{orderId}")
+    public Result<Boolean> sendOrderBillInfo(@PathVariable Long orderId) {
+        Long driverId = AuthContextHolder.getUserId();
+        return Result.ok(orderService.sendOrderBillInfo(orderId, driverId));
+    }
+
 }
 

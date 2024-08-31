@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jxh.drivex.model.entity.order.OrderInfo;
 import com.jxh.drivex.model.vo.order.OrderListVo;
+import com.jxh.drivex.model.vo.order.OrderPayVo;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -13,4 +14,6 @@ public interface OrderInfoMapper extends BaseMapper<OrderInfo> {
     Page<OrderListVo> selectCustomerOrderPage(Page<OrderInfo> pageParam, Long customerId);
 
     Page<OrderListVo> selectDriverOrderPage(Page<OrderInfo> pageParam, Long driverId);
+
+    OrderPayVo selectOrderPayVo(String orderNo, Long customerId);
 }

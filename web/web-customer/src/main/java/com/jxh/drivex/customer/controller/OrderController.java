@@ -7,6 +7,7 @@ import com.jxh.drivex.customer.service.OrderService;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
+import com.jxh.drivex.model.form.payment.CreateWxPaymentForm;
 import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
 import com.jxh.drivex.model.vo.driver.DriverInfoVo;
@@ -16,6 +17,7 @@ import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderListVo;
+import com.jxh.drivex.model.vo.payment.WxPrepayVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -112,6 +114,22 @@ public class OrderController {
         Long customerId = AuthContextHolder.getUserId();
         PageVo<OrderListVo> pageVo = orderService.findCustomerOrderPage(customerId, page, limit);
         return Result.ok(pageVo);
+    }
+
+    @DrivexLogin
+    @Operation(summary = "创建微信支付")
+    @PostMapping("/createWxPayment")
+    public Result<WxPrepayVo> createWxPayment(@RequestBody CreateWxPaymentForm createWxPaymentForm) {
+        Long customerId = AuthContextHolder.getUserId();
+        createWxPaymentForm.setCustomerId(customerId);
+        return Result.ok(orderService.createWxPayment(createWxPaymentForm));
+    }
+
+    @DrivexLogin
+    @Operation(summary = "支付状态查询")
+    @GetMapping("/queryPayStatus/{orderNo}")
+    public Result<Boolean> queryPayStatus(@PathVariable String orderNo) {
+        return Result.ok(orderService.queryPayStatus(orderNo));
     }
 
 }

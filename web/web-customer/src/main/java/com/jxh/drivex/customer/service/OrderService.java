@@ -3,6 +3,7 @@ package com.jxh.drivex.customer.service;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
+import com.jxh.drivex.model.form.payment.CreateWxPaymentForm;
 import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
 import com.jxh.drivex.model.vo.driver.DriverInfoVo;
@@ -12,6 +13,7 @@ import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderListVo;
+import com.jxh.drivex.model.vo.payment.WxPrepayVo;
 
 public interface OrderService {
 
@@ -34,4 +36,8 @@ public interface OrderService {
     OrderServiceLastLocationVo getOrderServiceLastLocation(Long orderId);
 
     PageVo<OrderListVo> findCustomerOrderPage(Long customerId, Long page, Long limit);
+
+    WxPrepayVo createWxPayment(CreateWxPaymentForm createWxPaymentForm);
+
+    Boolean queryPayStatus(String orderNo);
 }

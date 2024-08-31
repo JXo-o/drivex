@@ -2,16 +2,21 @@ package com.jxh.drivex.customer.service.impl;
 
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
+import com.jxh.drivex.customer.client.CustomerInfoFeignClient;
 import com.jxh.drivex.customer.service.OrderService;
 import com.jxh.drivex.dispatch.client.NewOrderFeignClient;
 import com.jxh.drivex.driver.client.DriverInfoFeignClient;
 import com.jxh.drivex.map.client.LocationFeignClient;
 import com.jxh.drivex.map.client.MapFeignClient;
+import com.jxh.drivex.map.client.WxPayFeignClient;
 import com.jxh.drivex.model.entity.order.OrderInfo;
+import com.jxh.drivex.model.enums.OrderStatus;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
 import com.jxh.drivex.model.form.order.OrderInfoForm;
+import com.jxh.drivex.model.form.payment.CreateWxPaymentForm;
+import com.jxh.drivex.model.form.payment.PaymentInfoForm;
 import com.jxh.drivex.model.form.rules.FeeRuleRequestForm;
 import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.customer.ExpectOrderVo;
@@ -23,6 +28,8 @@ import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
 import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderInfoVo;
 import com.jxh.drivex.model.vo.order.OrderListVo;
+import com.jxh.drivex.model.vo.order.OrderPayVo;
+import com.jxh.drivex.model.vo.payment.WxPrepayVo;
 import com.jxh.drivex.model.vo.rules.FeeRuleResponseVo;
 import com.jxh.drivex.order.client.OrderInfoFeignClient;
 import com.jxh.drivex.rules.client.FeeRuleFeignClient;
@@ -42,6 +49,8 @@ public class OrderServiceImpl implements OrderService {
     private final NewOrderFeignClient newOrderFeignClient;
     private final DriverInfoFeignClient driverInfoFeignClient;
     private final LocationFeignClient locationFeignClient;
+    private final WxPayFeignClient wxPayFeignClient;
+    private final CustomerInfoFeignClient customerInfoFeignClient;
 
     public OrderServiceImpl(
             MapFeignClient mapFeignClient,
@@ -49,7 +58,9 @@ public class OrderServiceImpl implements OrderService {
             OrderInfoFeignClient orderInfoFeignClient,
             NewOrderFeignClient newOrderFeignClient,
             DriverInfoFeignClient driverInfoFeignClient,
-            LocationFeignClient locationFeignClient
+            LocationFeignClient locationFeignClient,
+            WxPayFeignClient wxPayFeignClient,
+            CustomerInfoFeignClient customerInfoFeignClient
     ) {
         this.mapFeignClient = mapFeignClient;
         this.feeRuleFeignClient = feeRuleFeignClient;
@@ -57,6 +68,8 @@ public class OrderServiceImpl implements OrderService {
         this.newOrderFeignClient = newOrderFeignClient;
         this.driverInfoFeignClient = driverInfoFeignClient;
         this.locationFeignClient = locationFeignClient;
+        this.wxPayFeignClient = wxPayFeignClient;
+        this.customerInfoFeignClient = customerInfoFeignClient;
     }
 
     /**
@@ -145,15 +158,25 @@ public class OrderServiceImpl implements OrderService {
         return orderInfoFeignClient.searchCustomerCurrentOrder(customerId).getData();
     }
 
+    /**
+     * 根据订单id获取订单信息。
+     *
+     * @param orderId 订单id
+     * @param customerId 乘客id
+     * @return 返回订单信息
+     */
     @Override
     public OrderInfoVo getOrderInfo(Long orderId, Long customerId) {
         OrderInfo orderInfo = orderInfoFeignClient.getOrderInfo(orderId).getData();
-        if (orderInfo.getCustomerId().longValue() != customerId.longValue()) {
+        if (!orderInfo.getCustomerId().equals(customerId)) {
             throw new DrivexException(ResultCodeEnum.ORDER_ID_NOT_FOUND);
         }
         OrderInfoVo orderInfoVo = new OrderInfoVo();
         orderInfoVo.setOrderId(orderId);
         BeanUtils.copyProperties(orderInfo, orderInfoVo);
+        if (orderInfo.getStatus() >= OrderStatus.UNPAID.getStatus()) {
+            orderInfoVo.setOrderBillVo(orderInfoFeignClient.getOrderBillInfo(orderId).getData());
+        }
         return orderInfoVo;
     }
 
@@ -190,6 +213,41 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public PageVo<OrderListVo> findCustomerOrderPage(Long customerId, Long page, Long limit) {
         return orderInfoFeignClient.findCustomerOrderPage(customerId, page, limit).getData();
+    }
+
+    /**
+     * 创建微信支付。
+     * <p>此方法用于创建微信支付订单，包括获取订单支付相关信息、乘客微信openId、司机微信openId等信息。</p>
+     *
+     * @param createWxPaymentForm 创建微信支付请求表单，包含订单号和乘客id
+     * @return 返回微信支付对象
+     */
+    @Override
+    public WxPrepayVo createWxPayment(CreateWxPaymentForm createWxPaymentForm) {
+        OrderPayVo orderPayVo = orderInfoFeignClient.getOrderPayVo(
+                createWxPaymentForm.getOrderNo(),
+                createWxPaymentForm.getCustomerId()
+        ).getData();
+        if (!orderPayVo.getStatus().equals(OrderStatus.UNPAID.getStatus())) {
+            throw new DrivexException(ResultCodeEnum.ILLEGAL_REQUEST);
+        }
+        PaymentInfoForm paymentInfoForm = new PaymentInfoForm();
+        paymentInfoForm.setCustomerOpenId(
+                customerInfoFeignClient.getCustomerOpenId(orderPayVo.getCustomerId()).getData()
+        );
+        paymentInfoForm.setDriverOpenId(
+                driverInfoFeignClient.getDriverOpenId(orderPayVo.getDriverId()).getData()
+        );
+        paymentInfoForm.setOrderNo(orderPayVo.getOrderNo());
+        paymentInfoForm.setAmount(orderPayVo.getPayAmount());
+        paymentInfoForm.setContent(orderPayVo.getContent());
+        paymentInfoForm.setPayWay(1);
+        return wxPayFeignClient.createWxPayment(paymentInfoForm).getData();
+    }
+
+    @Override
+    public Boolean queryPayStatus(String orderNo) {
+        return wxPayFeignClient.queryPayStatus(orderNo).getData();
     }
 
     /**

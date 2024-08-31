@@ -8,8 +8,7 @@ import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderBillForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
 import com.jxh.drivex.model.vo.base.PageVo;
-import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
-import com.jxh.drivex.model.vo.order.OrderListVo;
+import com.jxh.drivex.model.vo.order.*;
 
 public interface OrderInfoService extends IService<OrderInfo> {
 
@@ -38,4 +37,12 @@ public interface OrderInfoService extends IService<OrderInfo> {
     PageVo<OrderListVo> findCustomerOrderPage(Page<OrderInfo> pageParam, Long customerId);
 
     PageVo<OrderListVo> findDriverOrderPage(Page<OrderInfo> pageParam, Long driverId);
+
+    OrderBillVo getOrderBillInfo(Long orderId);
+
+    OrderProfitsharingVo getOrderProfitsharing(Long orderId);
+
+    Boolean sendOrderBillInfo(Long orderId, Long driverId);
+
+    OrderPayVo getOrderPayVo(String orderNo, Long customerId);
 }

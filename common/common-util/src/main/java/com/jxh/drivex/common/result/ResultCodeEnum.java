@@ -10,6 +10,8 @@ public enum ResultCodeEnum {
 
     BAD_REQUEST(400, "请求错误"),
     WX_CODE_ERROR(400, "微信code错误"),
+    WX_PAY_NOTIFY_ERROR(400, "微信支付回调失败"),
+    WX_CREATE_ERROR(400, "微信创建订单失败"),
     VALIDATE_CODE_ERROR(400, "验证码错误"),
     PHONE_CODE_ERROR(400, "手机验证码错误"),
     XXL_JOB_ERROR(400, "xxl-job调用失败"),

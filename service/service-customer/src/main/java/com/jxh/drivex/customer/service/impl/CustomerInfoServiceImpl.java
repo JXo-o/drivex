@@ -4,6 +4,7 @@ import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import cn.binarywang.wx.miniapp.bean.WxMaPhoneNumberInfo;
 import com.alibaba.fastjson2.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
@@ -125,5 +126,21 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         customerInfo.setId(updateWxPhoneForm.getCustomerId());
         customerInfo.setPhone(phoneNumber);
         return this.updateById(customerInfo);
+    }
+
+    /**
+     * 获取用户的OpenId。
+     *
+     * @param customerId 用户ID
+     * @return 用户的OpenId
+     */
+    @Override
+    public String getCustomerOpenId(Long customerId) {
+        CustomerInfo customerInfo = this.getOne(
+                new LambdaQueryWrapper<CustomerInfo>()
+                        .eq(CustomerInfo::getId, customerId)
+                        .select(CustomerInfo::getWxOpenId)
+        );
+        return customerInfo.getWxOpenId();
     }
 }

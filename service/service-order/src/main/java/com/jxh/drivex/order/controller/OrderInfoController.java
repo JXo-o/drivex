@@ -133,13 +133,13 @@ public class OrderInfoController {
     @Operation(summary = "根据订单id获取实际账单信息")
     @GetMapping("/getOrderBillInfo/{orderId}")
     Result<OrderBillVo> getOrderBillInfo(@PathVariable("orderId") Long orderId) {
-        return Result.ok();
+        return Result.ok(orderInfoService.getOrderBillInfo(orderId));
     }
 
     @Operation(summary = "根据订单id获取实际分账信息")
     @GetMapping("/getOrderProfitsharing/{orderId}")
     Result<OrderProfitsharingVo> getOrderProfitsharing(@PathVariable("orderId") Long orderId) {
-        return Result.ok();
+        return Result.ok(orderInfoService.getOrderProfitsharing(orderId));
     }
 
     @Operation(summary = "司机发送账单信息")
@@ -148,7 +148,7 @@ public class OrderInfoController {
             @PathVariable("orderId") Long orderId,
             @PathVariable("driverId") Long driverId
     ) {
-        return Result.ok();
+        return Result.ok(orderInfoService.sendOrderBillInfo(orderId, driverId));
     }
 
     @Operation(summary = "获取订单支付信息")
@@ -157,7 +157,7 @@ public class OrderInfoController {
             @PathVariable("orderNo") String orderNo,
             @PathVariable("customerId") Long customerId
     ) {
-        return Result.ok();
+        return Result.ok(orderInfoService.getOrderPayVo(orderNo, customerId));
     }
 
     @Operation(summary = "更改订单支付状态")

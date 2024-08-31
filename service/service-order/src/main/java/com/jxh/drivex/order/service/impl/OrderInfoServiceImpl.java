@@ -18,8 +18,7 @@ import com.jxh.drivex.model.form.order.StartDriveForm;
 import com.jxh.drivex.model.form.order.UpdateOrderBillForm;
 import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
 import com.jxh.drivex.model.vo.base.PageVo;
-import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
-import com.jxh.drivex.model.vo.order.OrderListVo;
+import com.jxh.drivex.model.vo.order.*;
 import com.jxh.drivex.order.mapper.OrderBillMapper;
 import com.jxh.drivex.order.mapper.OrderInfoMapper;
 import com.jxh.drivex.order.mapper.OrderProfitsharingMapper;
@@ -36,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 @Service
 public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo>
@@ -412,6 +410,77 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     public PageVo<OrderListVo> findDriverOrderPage(Page<OrderInfo> pageParam, Long driverId) {
         Page<OrderListVo> pageInfo = orderInfoMapper.selectDriverOrderPage(pageParam, driverId);
         return new PageVo<>(pageInfo.getRecords(), pageInfo.getPages(), pageInfo.getTotal());
+    }
+
+    /**
+     * 根据订单ID获取实际账单信息。
+     *
+     * @param orderId 订单ID
+     * @return 实际账单信息
+     */
+    @Override
+    public OrderBillVo getOrderBillInfo(Long orderId) {
+        OrderBill orderBill = orderBillMapper.selectOne(
+            new LambdaQueryWrapper<OrderBill>().eq(OrderBill::getOrderId, orderId)
+        );
+        OrderBillVo orderBillVo = new OrderBillVo();
+        BeanUtils.copyProperties(orderBill, orderBillVo);
+        return orderBillVo;
+    }
+
+    /**
+     * 根据订单ID获取实际分账信息。
+     *
+     * @param orderId 订单ID
+     * @return 实际分账信息
+     */
+    @Override
+    public OrderProfitsharingVo getOrderProfitsharing(Long orderId) {
+        OrderProfitsharing orderProfitsharing = orderProfitsharingMapper.selectOne(
+                new LambdaQueryWrapper<OrderProfitsharing>().eq(OrderProfitsharing::getOrderId, orderId)
+        );
+        OrderProfitsharingVo orderProfitsharingVo = new OrderProfitsharingVo();
+        BeanUtils.copyProperties(orderProfitsharing, orderProfitsharingVo);
+        return orderProfitsharingVo;
+    }
+
+    /**
+     * 司机更新订单为待付款，即发送账单信息。
+     *
+     * @param orderId 订单ID
+     * @param driverId 司机ID
+     * @return 发送是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean sendOrderBillInfo(Long orderId, Long driverId) {
+        LambdaUpdateWrapper<OrderInfo> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderInfo::getId, orderId)
+                .eq(OrderInfo::getDriverId, driverId)
+                .set(OrderInfo::getStatus, OrderStatus.UNPAID.getStatus());
+        if(orderInfoMapper.update(updateWrapper) == 1) {
+            this.log(orderId, OrderStatus.UNPAID.getStatus());
+        } else {
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
+    }
+
+    /**
+     * 获取订单支付信息。
+     *
+     * @param orderNo 订单号
+     * @param customerId 乘客ID
+     * @return 订单支付信息
+     */
+    @Override
+    public OrderPayVo getOrderPayVo(String orderNo, Long customerId) {
+        OrderPayVo orderPayVo = orderInfoMapper.selectOrderPayVo(orderNo, customerId);
+        if(orderPayVo != null) {
+            String content = orderPayVo.getStartLocation() + " 到 " + orderPayVo.getEndLocation();
+            orderPayVo.setContent(content);
+        }
+        return orderPayVo;
     }
 
     /**

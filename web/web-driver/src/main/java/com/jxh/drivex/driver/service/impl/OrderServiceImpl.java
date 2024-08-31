@@ -10,6 +10,7 @@ import com.jxh.drivex.driver.service.OrderService;
 import com.jxh.drivex.map.client.LocationFeignClient;
 import com.jxh.drivex.map.client.MapFeignClient;
 import com.jxh.drivex.model.entity.order.OrderInfo;
+import com.jxh.drivex.model.enums.OrderStatus;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
 import com.jxh.drivex.model.form.order.OrderFeeForm;
 import com.jxh.drivex.model.form.order.StartDriveForm;
@@ -22,10 +23,7 @@ import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.map.DrivingLineVo;
 import com.jxh.drivex.model.vo.map.OrderLocationVo;
 import com.jxh.drivex.model.vo.map.OrderServiceLastLocationVo;
-import com.jxh.drivex.model.vo.order.CurrentOrderInfoVo;
-import com.jxh.drivex.model.vo.order.NewOrderDataVo;
-import com.jxh.drivex.model.vo.order.OrderInfoVo;
-import com.jxh.drivex.model.vo.order.OrderListVo;
+import com.jxh.drivex.model.vo.order.*;
 import com.jxh.drivex.model.vo.rules.FeeRuleResponseVo;
 import com.jxh.drivex.model.vo.rules.ProfitsharingRuleResponseVo;
 import com.jxh.drivex.model.vo.rules.RewardRuleResponseVo;
@@ -41,6 +39,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -97,6 +96,19 @@ public class OrderServiceImpl implements OrderService {
         return orderInfoFeignClient.searchDriverCurrentOrder(driverId).getData();
     }
 
+    /**
+     * 获取订单信息
+     * <ol>
+     *     <li>获取订单信息</li>
+     *     <li>获取订单账单信息</li>
+     *     <li>获取分账信息</li>
+     *     <li>封装订单信息</li>
+     * </ol>
+     *
+     * @param orderId 订单id
+     * @param driverId 司机id
+     * @return 订单信息
+     */
     @Override
     public OrderInfoVo getOrderInfo(Long orderId, Long driverId) {
         OrderInfo orderInfo = orderInfoFeignClient.getOrderInfo(orderId).getData();
@@ -106,6 +118,10 @@ public class OrderServiceImpl implements OrderService {
         OrderInfoVo orderInfoVo = new OrderInfoVo();
         orderInfoVo.setOrderId(orderId);
         BeanUtils.copyProperties(orderInfo, orderInfoVo);
+        if (orderInfo.getStatus() >= OrderStatus.END_SERVICE.getStatus()) {
+            orderInfoVo.setOrderBillVo(orderInfoFeignClient.getOrderBillInfo(orderId).getData());
+            orderInfoVo.setOrderProfitsharingVo(orderInfoFeignClient.getOrderProfitsharing(orderId).getData());
+        }
         return orderInfoVo;
     }
 
@@ -272,6 +288,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public PageVo<OrderListVo> findDriverOrderPage(Long driverId, Long page, Long limit) {
         return orderInfoFeignClient.findDriverOrderPage(driverId, page, limit).getData();
+    }
+
+    @Override
+    public Boolean sendOrderBillInfo(Long orderId, Long driverId) {
+        return orderInfoFeignClient.sendOrderBillInfo(orderId, driverId).getData();
     }
 
 }
