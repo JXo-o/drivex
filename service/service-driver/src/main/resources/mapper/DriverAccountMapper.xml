@@ -5,4 +5,12 @@
 
 <mapper namespace="com.jxh.drivex.driver.mapper.DriverAccountMapper">
 
+    <update id="add">
+        update driver_account
+        set total_amount        = total_amount + #{amount},
+            available_amount    = available_amount + #{amount},
+            total_income_amount = total_income_amount + #{amount}
+        where driver_id = #{driverId}
+    </update>
+
 </mapper>

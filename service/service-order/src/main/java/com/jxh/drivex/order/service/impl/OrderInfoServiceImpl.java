@@ -25,6 +25,7 @@ import com.jxh.drivex.order.mapper.OrderProfitsharingMapper;
 import com.jxh.drivex.order.mapper.OrderStatusLogMapper;
 import com.jxh.drivex.order.service.OrderInfoService;
 import com.jxh.drivex.order.service.OrderMonitorService;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
@@ -36,6 +37,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo>
         implements OrderInfoService {
@@ -481,6 +483,89 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             orderPayVo.setContent(content);
         }
         return orderPayVo;
+    }
+
+    /**
+     * 更新订单支付状态。
+     *
+     * @param orderNo 订单号
+     * @return 更新是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateOrderPayStatus(String orderNo) {
+        LambdaQueryWrapper<OrderInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderInfo::getOrderNo, orderNo);
+        queryWrapper.select(
+                OrderInfo::getId,
+                OrderInfo::getDriverId,
+                OrderInfo::getStatus
+        );
+        OrderInfo orderInfo = orderInfoMapper.selectOne(queryWrapper);
+        if(orderInfo == null || orderInfo.getStatus().equals(OrderStatus.PAID.getStatus()))
+            return true;
+
+        LambdaUpdateWrapper<OrderInfo> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderInfo::getOrderNo, orderNo)
+                .set(OrderInfo::getStatus, OrderStatus.PAID.getStatus())
+                .set(OrderInfo::getPayTime, new Date());
+        if(orderInfoMapper.update(updateWrapper) == 1) {
+            this.log(orderInfo.getId(), OrderStatus.PAID.getStatus());
+        } else {
+            log.error("订单支付回调更新订单状态失败，订单号为：" + orderNo);
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
+    }
+
+    /**
+     * 获取订单奖励费用。
+     *
+     * @param orderNo 订单号
+     * @return 订单奖励费用
+     */
+    @Override
+    public OrderRewardVo getOrderRewardFee(String orderNo) {
+        OrderInfo orderInfo = orderInfoMapper.selectOne(
+                new LambdaQueryWrapper<OrderInfo>()
+                        .eq(OrderInfo::getOrderNo, orderNo)
+                        .select(OrderInfo::getId,OrderInfo::getDriverId)
+        );
+        OrderBill orderBill = orderBillMapper.selectOne(
+                new LambdaQueryWrapper<OrderBill>()
+                        .eq(OrderBill::getOrderId, orderInfo.getId())
+                        .select(OrderBill::getRewardFee)
+        );
+        OrderRewardVo orderRewardVo = new OrderRewardVo();
+        orderRewardVo.setOrderId(orderInfo.getId());
+        orderRewardVo.setDriverId(orderInfo.getDriverId());
+        orderRewardVo.setRewardFee(orderBill.getRewardFee());
+        return orderRewardVo;
+    }
+
+    /**
+     * 更新订单分账状态。
+     *
+     * @param orderNo 订单号
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateProfitsharingStatus(String orderNo) {
+        OrderInfo orderInfo = orderInfoMapper.selectOne(
+                new LambdaQueryWrapper<OrderInfo>()
+                        .eq(OrderInfo::getOrderNo, orderNo)
+                        .select(OrderInfo::getId)
+        );
+        LambdaUpdateWrapper<OrderProfitsharing> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderProfitsharing::getOrderId, orderInfo.getId())
+                .set(OrderProfitsharing::getStatus, 2);
+        if (orderProfitsharingMapper.update(updateWrapper) == 1) {
+            log.info("订单分账状态更新成功，订单号为：" + orderNo);
+        } else {
+            log.error("订单分账状态更新失败，订单号为：" + orderNo);
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+
     }
 
     /**

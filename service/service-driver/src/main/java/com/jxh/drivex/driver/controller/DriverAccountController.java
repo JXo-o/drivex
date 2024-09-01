@@ -1,6 +1,7 @@
 package com.jxh.drivex.driver.controller;
 
 import com.jxh.drivex.common.result.Result;
+import com.jxh.drivex.driver.service.DriverAccountService;
 import com.jxh.drivex.model.form.driver.TransferForm;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,10 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value="/driver/account")
 public class DriverAccountController {
 
+    private final DriverAccountService driverAccountService;
+
+    public DriverAccountController(DriverAccountService driverAccountService) {
+        this.driverAccountService = driverAccountService;
+    }
+
     @Operation(summary = "转账")
     @PostMapping("/transfer")
     Result<Boolean> transfer(@RequestBody TransferForm transferForm) {
-        return Result.ok(true);
+        return Result.ok(driverAccountService.transfer(transferForm));
     }
 
 }

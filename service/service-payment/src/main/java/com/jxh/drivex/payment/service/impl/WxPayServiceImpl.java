@@ -3,12 +3,20 @@ package com.jxh.drivex.payment.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.jxh.drivex.common.constant.MqConst;
+import com.jxh.drivex.common.constant.SystemConstant;
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.service.RabbitService;
 import com.jxh.drivex.common.util.RequestUtils;
+import com.jxh.drivex.driver.client.DriverAccountFeignClient;
 import com.jxh.drivex.model.entity.payment.PaymentInfo;
+import com.jxh.drivex.model.enums.TradeType;
+import com.jxh.drivex.model.form.driver.TransferForm;
 import com.jxh.drivex.model.form.payment.PaymentInfoForm;
+import com.jxh.drivex.model.form.payment.ProfitsharingForm;
+import com.jxh.drivex.model.vo.order.OrderProfitsharingVo;
+import com.jxh.drivex.model.vo.order.OrderRewardVo;
 import com.jxh.drivex.model.vo.payment.WxPrepayVo;
+import com.jxh.drivex.order.client.OrderInfoFeignClient;
 import com.jxh.drivex.payment.config.WxPayProperties;
 import com.jxh.drivex.payment.mapper.PaymentInfoMapper;
 import com.jxh.drivex.payment.service.WxPayService;
@@ -19,6 +27,7 @@ import com.wechat.pay.java.core.notification.RequestParam;
 import com.wechat.pay.java.service.payments.jsapi.JsapiServiceExtension;
 import com.wechat.pay.java.service.payments.jsapi.model.*;
 import com.wechat.pay.java.service.payments.model.Transaction;
+import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -36,23 +45,26 @@ import java.util.Optional;
 public class WxPayServiceImpl implements WxPayService {
 
     private final PaymentInfoMapper paymentInfoMapper;
-
     private final RSAAutoCertificateConfig rsaAutoCertificateConfig;
-
     private final WxPayProperties wxPayProperties;
-
     private final RabbitService rabbitService;
+    private final OrderInfoFeignClient orderInfoFeignClient;
+    private final DriverAccountFeignClient driverAccountFeignClient;
 
     public WxPayServiceImpl(
             PaymentInfoMapper paymentInfoMapper,
             RSAAutoCertificateConfig rsaAutoCertificateConfig,
             WxPayProperties wxPayProperties,
-            RabbitService rabbitService
+            RabbitService rabbitService,
+            OrderInfoFeignClient orderInfoFeignClient,
+            DriverAccountFeignClient driverAccountFeignClient
     ) {
         this.paymentInfoMapper = paymentInfoMapper;
         this.rsaAutoCertificateConfig = rsaAutoCertificateConfig;
         this.wxPayProperties = wxPayProperties;
         this.rabbitService = rabbitService;
+        this.orderInfoFeignClient = orderInfoFeignClient;
+        this.driverAccountFeignClient = driverAccountFeignClient;
     }
 
     /**
@@ -156,6 +168,56 @@ public class WxPayServiceImpl implements WxPayService {
             log.error("查询支付状态失败", e);
         }
         return false;
+    }
+
+    /**
+     * 处理订单支付后的后续操作，包括更新订单支付状态、处理奖励费用以及延迟发送分账请求。
+     *
+     * <p>该方法的主要操作流程如下：</p>
+     * <ul>
+     *     <li>调用订单服务，更新订单的支付状态。</li>
+     *     <li>获取订单的奖励费用信息 {@link OrderRewardVo}：
+     *          <ul>
+     *              <li>如果奖励费用大于0，则创建转账请求 {@link TransferForm} 并调用司机账户服务执行转账操作，将奖励费用支付给司机。</li>
+     *          </ul>
+     *     </li>
+     *     <li>获取订单的分账信息 {@link OrderProfitsharingVo}：
+     *          <ul>
+     *              <li>构建分账请求 {@link ProfitsharingForm}，并将其以延迟消息的方式发送到消息队列，以便稍后进行分账操作。</li>
+     *          </ul>
+     *     </li>
+     * </ul>
+     * <p>此方法使用了 {@code @GlobalTransactional} 注解，表示整个操作过程是一个分布式事务。</p>
+     *
+     * @param orderNo 订单号，用于标识需要处理的订单。
+     */
+    @Override
+    @GlobalTransactional
+    public void handleOrder(String orderNo) {
+        orderInfoFeignClient.updateOrderPayStatus(orderNo);
+        OrderRewardVo orderRewardVo = orderInfoFeignClient.getOrderRewardFee(orderNo).getData();
+        if(orderRewardVo.getRewardFee() != null && orderRewardVo.getRewardFee().doubleValue() > 0) {
+            TransferForm transferForm = new TransferForm();
+            transferForm.setTradeNo(orderNo);
+            transferForm.setTradeType(TradeType.REWARD.getType());
+            transferForm.setContent(TradeType.REWARD.getContent());
+            transferForm.setAmount(orderRewardVo.getRewardFee());
+            transferForm.setDriverId(orderRewardVo.getDriverId());
+            driverAccountFeignClient.transfer(transferForm);
+        }
+
+        OrderProfitsharingVo orderProfitsharingVo =
+                orderInfoFeignClient.getOrderProfitsharing(orderRewardVo.getOrderId()).getData();
+        ProfitsharingForm profitsharingForm = new ProfitsharingForm();
+        profitsharingForm.setOrderNo(orderNo);
+        profitsharingForm.setAmount(orderProfitsharingVo.getDriverIncome());
+        profitsharingForm.setDriverId(orderRewardVo.getDriverId());
+        rabbitService.sendDelayMessage(
+                MqConst.EXCHANGE_PROFITSHARING,
+                MqConst.ROUTING_PROFITSHARING,
+                JSON.toJSONString(profitsharingForm),
+                SystemConstant.PROFITSHARING_DELAY_TIME
+        );
     }
 
     /**
