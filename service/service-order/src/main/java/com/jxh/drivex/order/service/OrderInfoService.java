@@ -10,6 +10,8 @@ import com.jxh.drivex.model.form.order.UpdateOrderCartForm;
 import com.jxh.drivex.model.vo.base.PageVo;
 import com.jxh.drivex.model.vo.order.*;
 
+import java.math.BigDecimal;
+
 public interface OrderInfoService extends IService<OrderInfo> {
 
     Long saveOrderInfo(OrderInfoForm orderInfoForm);
@@ -51,4 +53,6 @@ public interface OrderInfoService extends IService<OrderInfo> {
     OrderRewardVo getOrderRewardFee(String orderNo);
 
     void updateProfitsharingStatus(String orderNo);
+
+    Boolean updateCouponAmount(Long orderId, BigDecimal couponAmount);
 }

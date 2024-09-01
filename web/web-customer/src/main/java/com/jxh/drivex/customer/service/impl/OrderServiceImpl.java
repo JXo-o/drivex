@@ -2,6 +2,7 @@ package com.jxh.drivex.customer.service.impl;
 
 import com.jxh.drivex.common.execption.DrivexException;
 import com.jxh.drivex.common.result.ResultCodeEnum;
+import com.jxh.drivex.coupon.client.CouponFeignClient;
 import com.jxh.drivex.customer.client.CustomerInfoFeignClient;
 import com.jxh.drivex.customer.service.OrderService;
 import com.jxh.drivex.dispatch.client.NewOrderFeignClient;
@@ -11,6 +12,7 @@ import com.jxh.drivex.map.client.MapFeignClient;
 import com.jxh.drivex.map.client.WxPayFeignClient;
 import com.jxh.drivex.model.entity.order.OrderInfo;
 import com.jxh.drivex.model.enums.OrderStatus;
+import com.jxh.drivex.model.form.coupon.UseCouponForm;
 import com.jxh.drivex.model.form.customer.ExpectOrderForm;
 import com.jxh.drivex.model.form.customer.SubmitOrderForm;
 import com.jxh.drivex.model.form.map.CalculateDrivingLineForm;
@@ -37,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Slf4j
@@ -51,6 +54,7 @@ public class OrderServiceImpl implements OrderService {
     private final LocationFeignClient locationFeignClient;
     private final WxPayFeignClient wxPayFeignClient;
     private final CustomerInfoFeignClient customerInfoFeignClient;
+    private final CouponFeignClient couponFeignClient;
 
     public OrderServiceImpl(
             MapFeignClient mapFeignClient,
@@ -60,7 +64,8 @@ public class OrderServiceImpl implements OrderService {
             DriverInfoFeignClient driverInfoFeignClient,
             LocationFeignClient locationFeignClient,
             WxPayFeignClient wxPayFeignClient,
-            CustomerInfoFeignClient customerInfoFeignClient
+            CustomerInfoFeignClient customerInfoFeignClient,
+            CouponFeignClient couponFeignClient
     ) {
         this.mapFeignClient = mapFeignClient;
         this.feeRuleFeignClient = feeRuleFeignClient;
@@ -70,6 +75,7 @@ public class OrderServiceImpl implements OrderService {
         this.locationFeignClient = locationFeignClient;
         this.wxPayFeignClient = wxPayFeignClient;
         this.customerInfoFeignClient = customerInfoFeignClient;
+        this.couponFeignClient = couponFeignClient;
     }
 
     /**
@@ -231,6 +237,28 @@ public class OrderServiceImpl implements OrderService {
         if (!orderPayVo.getStatus().equals(OrderStatus.UNPAID.getStatus())) {
             throw new DrivexException(ResultCodeEnum.ILLEGAL_REQUEST);
         }
+
+        BigDecimal couponAmount = null;
+        if (orderPayVo.getCouponAmount() == null &&
+                createWxPaymentForm.getCustomerCouponId() != null &&
+                createWxPaymentForm.getCustomerCouponId() != 0
+        ) {
+            UseCouponForm useCouponForm = new UseCouponForm();
+            useCouponForm.setOrderId(orderPayVo.getOrderId());
+            useCouponForm.setCustomerCouponId(createWxPaymentForm.getCustomerCouponId());
+            useCouponForm.setOrderAmount(orderPayVo.getPayAmount());
+            useCouponForm.setCustomerId(createWxPaymentForm.getCustomerId());
+            couponAmount = couponFeignClient.useCoupon(useCouponForm).getData();
+        }
+        BigDecimal payAmount = orderPayVo.getPayAmount();
+        if (couponAmount != null) {
+            Boolean isUpdate = orderInfoFeignClient.updateCouponAmount(orderPayVo.getOrderId(), couponAmount).getData();
+            if (!isUpdate) {
+                throw new DrivexException(ResultCodeEnum.DATA_ERROR);
+            }
+            payAmount = payAmount.subtract(couponAmount);
+        }
+
         PaymentInfoForm paymentInfoForm = new PaymentInfoForm();
         paymentInfoForm.setCustomerOpenId(
                 customerInfoFeignClient.getCustomerOpenId(orderPayVo.getCustomerId()).getData()
@@ -239,7 +267,7 @@ public class OrderServiceImpl implements OrderService {
                 driverInfoFeignClient.getDriverOpenId(orderPayVo.getDriverId()).getData()
         );
         paymentInfoForm.setOrderNo(orderPayVo.getOrderNo());
-        paymentInfoForm.setAmount(orderPayVo.getPayAmount());
+        paymentInfoForm.setAmount(payAmount);
         paymentInfoForm.setContent(orderPayVo.getContent());
         paymentInfoForm.setPayWay(1);
         return wxPayFeignClient.createWxPayment(paymentInfoForm).getData();

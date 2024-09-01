@@ -33,6 +33,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -566,6 +567,22 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
         }
 
+    }
+
+    /**
+     * 更新订单优惠券金额。
+     *
+     * @param orderId 订单ID
+     * @param couponAmount 优惠券金额
+     * @return 更新是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateCouponAmount(Long orderId, BigDecimal couponAmount) {
+        if(orderBillMapper.updateCouponAmount(orderId, couponAmount) != 1) {
+            throw new DrivexException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
     }
 
     /**

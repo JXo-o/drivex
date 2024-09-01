@@ -178,7 +178,7 @@ public class OrderInfoController {
             @PathVariable("orderId") Long orderId,
             @PathVariable("couponAmount") BigDecimal couponAmount
     ) {
-        return Result.ok();
+        return Result.ok(orderInfoService.updateCouponAmount(orderId, couponAmount));
     }
 }
 
